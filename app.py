@@ -278,7 +278,6 @@ def checkbox_group(label, options, state_key, columns=3):
         widget_key = f"{state_key}_{slugify(option)}"
         default_value = option in selected_set
 
-        # Corrige possíveis estados antigos incompatíveis
         if widget_key not in st.session_state or not isinstance(st.session_state.get(widget_key), bool):
             st.session_state[widget_key] = default_value
 
@@ -317,9 +316,12 @@ def combine_characteristics(diags, outro=""):
 
 def juntar_multiselect_com_outro(lista_base, texto_outro):
     itens = list(lista_base) if lista_base else []
+    usar_outro = "Outro" in itens
     itens = [x for x in itens if x != "Outro"]
-    if texto_outro and texto_outro.strip():
+
+    if usar_outro and texto_outro and texto_outro.strip():
         itens.append(texto_outro.strip())
+
     return ", ".join(itens) if itens else "não informado"
 
 def obter_cobranca():
@@ -641,31 +643,29 @@ with tabs[0]:
     st.subheader("Interesses")
     checkbox_group("Selecione os interesses da criança", INTERESSES_OPTIONS, "interesses", columns=4)
     if "Outro" in st.session_state["interesses"]:
-        st.session_state["interesses_outro"] = st.text_input(
+        valor_outro_interesse = st.text_input(
             "Outro interesse",
-            value=st.session_state["interesses_outro"],
+            value=st.session_state.get("interesses_outro", ""),
             key="interesses_outro_input"
         )
-    else:
-        st.session_state["interesses_outro"] = ""
+        st.session_state["interesses_outro"] = valor_outro_interesse
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Diagnósticos e características")
     checkbox_group("Selecione um ou mais diagnósticos", DIAG_OPTIONS, "diagnosticos", columns=3)
     if "Outro" in st.session_state["diagnosticos"]:
-        st.session_state["outro_diagnostico"] = st.text_input(
+        valor_outro_diag = st.text_input(
             "Qual outro diagnóstico?",
-            value=st.session_state["outro_diagnostico"],
+            value=st.session_state.get("outro_diagnostico", ""),
             key="outro_diag_input"
         )
-    else:
-        st.session_state["outro_diagnostico"] = ""
+        st.session_state["outro_diagnostico"] = valor_outro_diag
 
     if (not st.session_state["outras_caracteristicas"].strip()) or st.button("Atualizar características sugeridas"):
         st.session_state["outras_caracteristicas"] = combine_characteristics(
             st.session_state["diagnosticos"],
-            st.session_state["outro_diagnostico"]
+            st.session_state.get("outro_diagnostico", "")
         )
 
     st.session_state["outras_caracteristicas"] = st.text_area(
@@ -691,55 +691,50 @@ with tabs[1]:
 
     radio_group("Tipo de erro mais comum", ERRO_OPTIONS, "tipo_erro_mais_comum", horizontal=True)
     if st.session_state["tipo_erro_mais_comum"] == "Outro":
-        st.session_state["tipo_erro_outro"] = st.text_input(
+        valor_tipo_erro_outro = st.text_input(
             "Descreva o tipo de erro mais comum",
-            value=st.session_state["tipo_erro_outro"],
+            value=st.session_state.get("tipo_erro_outro", ""),
             key="tipo_erro_outro_input"
         )
-    else:
-        st.session_state["tipo_erro_outro"] = ""
+        st.session_state["tipo_erro_outro"] = valor_tipo_erro_outro
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
     checkbox_group("O que mais engaja", ENGAJAMENTO_OPTIONS, "engajamento", columns=3)
     if "Outro" in st.session_state["engajamento"]:
-        st.session_state["engajamento_outro"] = st.text_input(
+        valor_engajamento_outro = st.text_input(
             "Outro fator de engajamento",
-            value=st.session_state["engajamento_outro"],
+            value=st.session_state.get("engajamento_outro", ""),
             key="engajamento_outro_input"
         )
-    else:
-        st.session_state["engajamento_outro"] = ""
+        st.session_state["engajamento_outro"] = valor_engajamento_outro
 
     checkbox_group("Principal dificuldade", DIFICULDADE_OPTIONS, "principal_dificuldade", columns=3)
     if "Outro" in st.session_state["principal_dificuldade"]:
-        st.session_state["dificuldade_outro"] = st.text_input(
+        valor_dificuldade_outro = st.text_input(
             "Outra dificuldade observada",
-            value=st.session_state["dificuldade_outro"],
+            value=st.session_state.get("dificuldade_outro", ""),
             key="dificuldade_outro_input"
         )
-    else:
-        st.session_state["dificuldade_outro"] = ""
+        st.session_state["dificuldade_outro"] = valor_dificuldade_outro
 
     checkbox_group("Sinais quando trava", TRAVA_OPTIONS, "sinais_quando_trava", columns=3)
     if "Outro" in st.session_state["sinais_quando_trava"]:
-        st.session_state["trava_outro"] = st.text_input(
+        valor_trava_outro = st.text_input(
             "Outro sinal quando trava",
-            value=st.session_state["trava_outro"],
+            value=st.session_state.get("trava_outro", ""),
             key="trava_outro_input"
         )
-    else:
-        st.session_state["trava_outro"] = ""
+        st.session_state["trava_outro"] = valor_trava_outro
 
     checkbox_group("Melhor forma de retomar", RETOMADA_OPTIONS, "melhor_forma_retomar", columns=3)
     if "Outro" in st.session_state["melhor_forma_retomar"]:
-        st.session_state["retomada_outro"] = st.text_input(
+        valor_retomada_outro = st.text_input(
             "Outra forma de retomar",
-            value=st.session_state["retomada_outro"],
+            value=st.session_state.get("retomada_outro", ""),
             key="retomada_outro_input"
         )
-    else:
-        st.session_state["retomada_outro"] = ""
+        st.session_state["retomada_outro"] = valor_retomada_outro
 
     st.markdown('<div class="small">Todos esses itens entram na interpretação dos prompts do Studio.</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
@@ -825,13 +820,12 @@ with tabs[3]:
     st.subheader("Como a escola cobra")
     checkbox_group("Selecione os formatos mais comuns", ESCOLA_COBRANCA_OPTIONS, "cobranca_escola", columns=3)
     if "Outro" in st.session_state["cobranca_escola"]:
-        st.session_state["cobranca_extra"] = st.text_input(
+        valor_cobranca_extra = st.text_input(
             "Outro tipo de cobrança",
-            value=st.session_state["cobranca_extra"],
+            value=st.session_state.get("cobranca_extra", ""),
             key="cobranca_extra_input"
         )
-    else:
-        st.session_state["cobranca_extra"] = ""
+        st.session_state["cobranca_extra"] = valor_cobranca_extra
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
