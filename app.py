@@ -479,58 +479,61 @@ IMPORTANTE
 
 def contexto_studio_compacto(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
     modo_fontes = "Usar as fontes anexadas como base." if usa_fontes else "Criar sem depender de fontes anexadas."
+    objetivo_dia = st.session_state.get("objetivo_dia", "").strip()
+    objetivo_txt = f"Objetivo do dia: {objetivo_dia}" if objetivo_dia else "Objetivo do dia: não informado"
 
-    return f"""Material personalizado.
-Matéria: {materia}
-Conteúdo: {conteudo}
+    return f"""Crie material personalizado para estudo.
+Matéria: {materia or 'não informada'}
+Conteúdo do dia: {conteudo or 'não informado'}
+{objetivo_txt}
 Dias até a prova: {dias}
 Situação: {situacao}
 Prioridade: {prioridade}
-Cobrança: {estilo or 'não informado'}
+Cobrança da escola: {estilo or 'não informado'}
 {modo_fontes}
 
-Perfil:
+Perfil do aluno:
 {resumo_aluno_compacto(data)}
 
-Regras:
-- adaptar ao aluno
-- considerar interesses, dificuldade, erro comum e retomada
-- ser claro e útil
+Use essas informações para adaptar linguagem, exemplos, explicação, dificuldade, erro comum e retomada.
 """
 
 def prompt_video(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
     return contexto_studio_compacto(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes) + """
-Gere um Video Overview final sobre esse conteúdo.
-Explique com clareza, linguagem natural, 2 exemplos progressivos, 1 erro comum com correção e fechamento curto de revisão.
-Não faça roteiro para professor. Gere o material final do vídeo.
+Crie o Video Overview final, pronto para uso.
+Explique o conteúdo de forma clara, envolvente e adaptada ao aluno.
+Inclua exemplos alinhados ao perfil e interesses do aluno, trate o erro comum esperado e finalize com revisão breve.
+Não descreva como fazer. Gere o vídeo final em texto para o Studio.
 """
 
 def prompt_audio(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
     return contexto_studio_compacto(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes) + """
-Gere um Audio Overview final para o responsável conduzir esse estudo.
-Fale de forma prática e acolhedora, explicando o conteúdo, onde o aluno pode travar, como ajudar sem dar a resposta e como revisar no final.
-Não faça roteiro técnico. Gere o material final do áudio.
+Crie o Audio Overview final, pronto para uso pelo responsável.
+Explique o conteúdo, a melhor forma de conduzir, onde o aluno pode travar, como retomar e como revisar.
+Use linguagem natural, direta e acolhedora.
+Não entregue instruções sobre o áudio. Gere o áudio final em texto para o Studio.
 """
 
 def prompt_slides(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
     return contexto_studio_compacto(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes) + """
-Gere os slides finais desse estudo.
-Pouco texto, boa clareza e progressão: conceito, exemplo, erro comum, aplicação e revisão.
-Não faça instruções sobre slides. Gere o conteúdo final dos slides.
+Crie os slides finais, prontos para estudo.
+Organize com progressão clara: conceito, exemplo, erro comum, aplicação e revisão.
+Use linguagem adequada ao aluno e pouco texto por slide.
+Não explique como montar slides. Gere os slides finais.
 """
 
 def prompt_flash(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
     return contexto_studio_compacto(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes) + """
-Gere os flashcards finais desse estudo.
-Crie de 6 a 8 flashcards curtos com foco em conceito, aplicação, comparação e erro comum.
-Não explique como fazer. Gere os flashcards prontos.
+Crie os flashcards finais, prontos para revisão.
+Gere de 6 a 8 flashcards curtos e úteis, com foco em conceito, aplicação, comparação e erro comum.
+Não descreva o processo. Gere os flashcards finais.
 """
 
 def prompt_teste(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
     return contexto_studio_compacto(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes) + """
-Gere um teste final curto e adaptado.
-Crie 5 questões, com gabarito comentado e erros comuns esperados.
-Não faça roteiro. Gere o teste pronto.
+Crie o teste final, pronto para uso.
+Gere 5 questões adaptadas ao aluno e ao formato de cobrança da escola, com gabarito comentado e erros comuns esperados.
+Não explique o processo. Gere o teste final.
 """
 
 def prompt_aula(data, materia, conteudo, estilo, situacao, prioridade, dias, selected, usa_fontes):
@@ -590,6 +593,30 @@ def extrair_texto_para_conteudo_dia(linha):
         return match.group(1).strip()
     return linha.strip()
 
+def extrair_campos_cronograma(linha):
+    resultado = {
+        "conteudo": "",
+        "objetivo": "",
+        "atividade": "",
+        "revisao": "",
+        "texto_colar": ""
+    }
+
+    padroes = {
+        "conteudo": r"CONTEÚDO DO DIA:\s*(.*?)\s*(?:\||$)",
+        "objetivo": r"OBJETIVO:\s*(.*?)\s*(?:\||$)",
+        "atividade": r"ATIVIDADE:\s*(.*?)\s*(?:\||$)",
+        "revisao": r"REVISÃO:\s*(.*?)\s*(?:\||$)",
+        "texto_colar": r'TEXTO PARA COLAR EM "CONTEÚDO DO DIA":\s*(.*)'
+    }
+
+    for chave, padrao in padroes.items():
+        match = re.search(padrao, linha, flags=re.IGNORECASE)
+        if match:
+            resultado[chave] = match.group(1).strip()
+
+    return resultado
+
 # ======================
 # ESTILO
 # ======================
@@ -621,8 +648,8 @@ hr {
 # APP
 # ======================
 
-st.title("🧠 EduAI Studio - v6.3")
-st.caption("Prompts mais curtos para o NotebookLM Studio, com campos clicáveis e cronograma reutilizável no conteúdo do dia.")
+st.title("🧠 EduAI Studio - v6.4")
+st.caption("Perfil, aprendizagem e cronograma conectados aos prompts do Studio.")
 
 tabs = st.tabs(["👦 Perfil", "🧠 Aprendizagem", "🗓️ Cronograma", "⚙️ Configuração", "🎬 Studio", "📦 Aula Completa"])
 
@@ -830,11 +857,22 @@ with tabs[2]:
         key="cron_linha_dia_textarea"
     )
 
-    if st.button("Usar essa linha no campo Conteúdo do dia", key="cron_usar_linha_btn"):
-        st.session_state["conteudo_dia"] = extrair_texto_para_conteudo_dia(
-            st.session_state["cronograma_linha_do_dia"]
+    if st.button("Usar essa linha na aba Configuração", key="cron_usar_linha_btn"):
+        campos = extrair_campos_cronograma(st.session_state["cronograma_linha_do_dia"])
+
+        if st.session_state["cron_materia"].strip():
+            st.session_state["mat_did"] = st.session_state["cron_materia"].strip()
+
+        st.session_state["conteudo_dia"] = (
+            campos["texto_colar"]
+            or campos["conteudo"]
+            or st.session_state["cronograma_linha_do_dia"].strip()
         )
-        st.success("Conteúdo do dia atualizado na aba Configuração.")
+
+        if campos["objetivo"]:
+            st.session_state["objetivo_dia"] = campos["objetivo"]
+
+        st.success("Matéria, conteúdo do dia e objetivo foram enviados para a aba Configuração.")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -948,6 +986,20 @@ with tabs[4]:
 
     st.subheader("Studio")
     st.caption("Prompts curtos para colar no NotebookLM Studio e gerar o material final.")
+
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.subheader("Base usada nos prompts")
+    st.write(f"**Matéria:** {materia or 'não informada'}")
+    st.write(f"**Conteúdo do dia:** {conteudo or 'não informado'}")
+    st.write(f"**Objetivo do dia:** {st.session_state.get('objetivo_dia', '') or 'não informado'}")
+    st.write(f"**Cobrança da escola:** {estilo or 'não informada'}")
+    st.text_area(
+        "Resumo compacto do aluno",
+        value=resumo_aluno_compacto(perfil),
+        height=180,
+        key="studio_base_resumo"
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
 
