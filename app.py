@@ -203,6 +203,7 @@ DEFAULTS = {
     "diagnosticos": [],
     "outro_diagnostico": "",
     "outras_caracteristicas": "",
+    "caracteristicas_sugeridas": "",
 
     "usa_fontes": False,
     "selected_materials": ["Vídeo", "Áudio (responsável)", "Slides"],
@@ -245,6 +246,34 @@ DEFAULTS = {
 
 for k, v in DEFAULTS.items():
     st.session_state.setdefault(k, v)
+
+# ======================
+# MIGRAÇÃO DE CHAVES ANTIGAS
+# ======================
+
+LEGACY_KEY_MAP = {
+    "perfil_nome_input": "nome",
+    "perfil_apelido_input": "apelido",
+    "perfil_idade_input": "idade",
+    "perfil_serie_input": "serie",
+    "perfil_escola_input": "escola",
+    "perfil_turno_input": "turno",
+    "perfil_responsavel_input": "responsavel",
+    "config_materia_input": "mat_did",
+    "config_conteudo_dia_textarea": "conteudo_dia",
+    "config_objetivo_input": "objetivo_dia",
+    "cron_materia_input": "cron_materia",
+    "cron_conteudos_textarea": "cron_conteudos",
+    "cron_alta_textarea": "cron_alta",
+    "cron_media_textarea": "cron_media",
+    "cron_baixa_textarea": "cron_baixa",
+}
+
+for old_key, new_key in LEGACY_KEY_MAP.items():
+    old_val = st.session_state.get(old_key, "")
+    new_val = st.session_state.get(new_key, "")
+    if (not new_val) and old_val:
+        st.session_state[new_key] = old_val
 
 # ======================
 # HELPERS
@@ -342,6 +371,12 @@ def obter_tipo_erro():
         return st.session_state["tipo_erro_outro"].strip()
     return erro
 
+def atualizar_caracteristicas_sugeridas():
+    st.session_state["caracteristicas_sugeridas"] = combine_characteristics(
+        st.session_state["diagnosticos"],
+        st.session_state.get("outro_diagnostico", "")
+    )
+
 def perfil_aprendizagem_texto():
     engajamento = juntar_multiselect_com_outro(
         st.session_state["engajamento"],
@@ -381,6 +416,15 @@ def get_perfil_data(data_prova=""):
     if st.session_state["outro_diagnostico"].strip():
         diagnosticos.append(st.session_state["outro_diagnostico"].strip())
 
+    atualizar_caracteristicas_sugeridas()
+
+    outras = st.session_state["outras_caracteristicas"].strip()
+    sugeridas = st.session_state["caracteristicas_sugeridas"].strip()
+
+    bloco_caracteristicas = sugeridas
+    if outras:
+        bloco_caracteristicas = f"{sugeridas}; {outras}" if sugeridas else outras
+
     return {
         "nome": st.session_state["nome"],
         "apelido": st.session_state["apelido"],
@@ -391,7 +435,8 @@ def get_perfil_data(data_prova=""):
         "interesses": obter_interesses(),
         "responsavel": st.session_state["responsavel"],
         "diagnosticos": diagnosticos,
-        "outras_caracteristicas": st.session_state["outras_caracteristicas"],
+        "outras_caracteristicas": bloco_caracteristicas,
+        "caracteristicas_sugeridas": sugeridas,
         "perfil_aprendizagem": perfil_aprendizagem_texto(),
         "data_prova": data_prova,
     }
@@ -435,6 +480,9 @@ DIAGNÓSTICOS
 INTERESSES
 - {data['interesses'] or 'não informado'}
 
+CARACTERÍSTICAS SUGERIDAS DO DIAGNÓSTICO
+- {data.get('caracteristicas_sugeridas', '') or 'não informado'}
+
 PERFIL DE APRENDIZAGEM
 - Atenção sustentada: {st.session_state['atencao_sustentada']}
 - Autonomia: {st.session_state['autonomia']}
@@ -451,7 +499,7 @@ PERFIL DE APRENDIZAGEM
 - Melhor forma de retomar: {retomada}
 
 OUTRAS CARACTERÍSTICAS
-- {data['outras_caracteristicas'] or 'não informado'}
+- {st.session_state['outras_caracteristicas'] or 'não informado'}
 """
 
 def build_base_prompt(data):
@@ -470,6 +518,9 @@ Responsável: {data['responsavel']}
 
 DIAGNÓSTICOS
 {diags}
+
+CARACTERÍSTICAS SUGERIDAS DO DIAGNÓSTICO
+{data.get('caracteristicas_sugeridas', 'não informado') or 'não informado'}
 
 PERFIL DE APRENDIZAGEM
 {data['perfil_aprendizagem']}
@@ -530,7 +581,7 @@ DADOS DO ALUNO
 
 REGRAS GERAIS
 - usar TODAS as informações acima para adaptar o material
-- considerar idade, série, diagnósticos, interesses, engajamento, dificuldade, erro comum e retomada
+- considerar idade, série, diagnósticos, características sugeridas do diagnóstico, interesses, engajamento, dificuldade, erro comum e retomada
 - alinhar o material ao jeito que a escola cobra
 - ser claro, útil e direto
 - não explicar como fazer o material
@@ -625,13 +676,6 @@ Regras:
 - o campo TEXTO PARA COLAR EM "CONTEÚDO DO DIA" deve sair pronto para usar na aba Configuração
 """
 
-def extrair_texto_para_conteudo_dia(linha):
-    padrao = r'TEXTO PARA COLAR EM "CONTEÚDO DO DIA"\s*:\s*(.*)'
-    match = re.search(padrao, linha, flags=re.IGNORECASE)
-    if match:
-        return match.group(1).strip()
-    return linha.strip()
-
 def extrair_campos_cronograma(linha):
     resultado = {
         "conteudo": "",
@@ -687,31 +731,38 @@ hr {
 # APP
 # ======================
 
-st.title("🧠 EduAI Studio - v6.5")
-st.caption("Perfil, aprendizagem e cronograma alimentando os prompts do Studio.")
+st.title("🧠 EduAI Studio - v6.6")
+st.caption("Características do diagnóstico visíveis e usadas nos prompts, com migração embutida.")
 
 tabs = st.tabs(["👦 Perfil", "🧠 Aprendizagem", "🗓️ Cronograma", "⚙️ Configuração", "🎬 Studio", "📦 Aula Completa"])
 
-# PERFIL
+# ======================
+# TAB PERFIL
+# ======================
+
 with tabs[0]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Conhecendo a criança")
     c1, c2 = st.columns(2)
 
-    c1.text_input("Nome", key="nome")
-    c2.text_input("Apelido", key="apelido")
-    c1.text_input("Idade", key="idade")
-    c2.text_input("Série / Ano", key="serie")
-    c1.text_input("Escola", key="escola")
-    c2.text_input("Turno", key="turno")
-    st.text_input("Nome do responsável", key="responsavel")
+    st.session_state["nome"] = c1.text_input("Nome", value=st.session_state.get("nome", ""), key="nome")
+    st.session_state["apelido"] = c2.text_input("Apelido", value=st.session_state.get("apelido", ""), key="apelido")
+    st.session_state["idade"] = c1.text_input("Idade", value=st.session_state.get("idade", ""), key="idade")
+    st.session_state["serie"] = c2.text_input("Série / Ano", value=st.session_state.get("serie", ""), key="serie")
+    st.session_state["escola"] = c1.text_input("Escola", value=st.session_state.get("escola", ""), key="escola")
+    st.session_state["turno"] = c2.text_input("Turno", value=st.session_state.get("turno", ""), key="turno")
+    st.session_state["responsavel"] = st.text_input("Nome do responsável", value=st.session_state.get("responsavel", ""), key="responsavel")
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Interesses")
     checkbox_group("Selecione os interesses da criança", INTERESSES_OPTIONS, "interesses", columns=4)
     if "Outro" in st.session_state["interesses"]:
-        st.text_input("Outro interesse", key="interesses_outro")
+        st.session_state["interesses_outro"] = st.text_input(
+            "Outro interesse",
+            value=st.session_state.get("interesses_outro", ""),
+            key="interesses_outro"
+        )
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -719,26 +770,36 @@ with tabs[0]:
     checkbox_group("Selecione um ou mais diagnósticos", DIAG_OPTIONS, "diagnosticos", columns=3)
 
     if "Outro" in st.session_state["diagnosticos"]:
-        st.text_input("Qual outro diagnóstico?", key="outro_diagnostico")
-
-    if (not st.session_state["outras_caracteristicas"].strip()) or st.button(
-        "Atualizar características sugeridas",
-        key="perfil_atualizar_caracteristicas_btn"
-    ):
-        st.session_state["outras_caracteristicas"] = combine_characteristics(
-            st.session_state["diagnosticos"],
-            st.session_state.get("outro_diagnostico", "")
+        st.session_state["outro_diagnostico"] = st.text_input(
+            "Qual outro diagnóstico?",
+            value=st.session_state.get("outro_diagnostico", ""),
+            key="outro_diagnostico"
         )
 
+    atualizar_caracteristicas_sugeridas()
+
     st.text_area(
+        "Características sugeridas automaticamente pelos diagnósticos",
+        value=st.session_state.get("caracteristicas_sugeridas", ""),
+        height=120,
+        key="caracteristicas_sugeridas_exibicao",
+        disabled=True
+    )
+
+    st.session_state["outras_caracteristicas"] = st.text_area(
         "Outras características (editável)",
+        value=st.session_state.get("outras_caracteristicas", ""),
         key="outras_caracteristicas",
         height=120
     )
-    st.markdown('<div class="small">Essas informações alimentam automaticamente os prompts.</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="small">As características sugeridas dos diagnósticos e as características adicionais entram nos prompts.</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# APRENDIZAGEM
+# ======================
+# TAB APRENDIZAGEM
+# ======================
+
 with tabs[1]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Perfil de aprendizagem")
@@ -777,7 +838,10 @@ with tabs[1]:
     st.markdown('<div class="small">Todos esses itens entram na interpretação dos prompts do Studio.</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# CRONOGRAMA
+# ======================
+# TAB CRONOGRAMA
+# ======================
+
 with tabs[2]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Plano de estudo até a prova")
@@ -798,6 +862,17 @@ with tabs[2]:
 
     st.caption(f"Data de hoje: {formatar_data_br(hoje)}")
     st.caption(f"Data da prova: {formatar_data_br(prova)}")
+
+    st.markdown("**Prévia do perfil que será usado no cronograma**")
+    st.write({
+        "nome": st.session_state.get("nome", ""),
+        "apelido": st.session_state.get("apelido", ""),
+        "idade": st.session_state.get("idade", ""),
+        "serie": st.session_state.get("serie", ""),
+        "escola": st.session_state.get("escola", ""),
+        "turno": st.session_state.get("turno", ""),
+        "responsavel": st.session_state.get("responsavel", "")
+    })
 
     st.text_area(
         "Conteúdos da prova",
@@ -854,7 +929,10 @@ with tabs[2]:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-# CONFIGURAÇÃO
+# ======================
+# TAB CONFIGURAÇÃO
+# ======================
+
 with tabs[3]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Configuração didática do dia")
@@ -927,7 +1005,10 @@ with tabs[3]:
     )
     st.markdown('</div>', unsafe_allow_html=True)
 
-# STUDIO
+# ======================
+# TAB STUDIO
+# ======================
+
 with tabs[4]:
     try:
         days = (prova2 - hoje2).days
@@ -955,7 +1036,7 @@ with tabs[4]:
     st.text_area(
         "Base real enviada para os prompts",
         value=base_prompt_studio,
-        height=320,
+        height=340,
         key="studio_base_real_textarea"
     )
     st.markdown('</div>', unsafe_allow_html=True)
@@ -968,7 +1049,7 @@ with tabs[4]:
         st.text_area(
             "Prompt de vídeo",
             value=prompt_video(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa),
-            height=220,
+            height=230,
             key="studio_video_prompt"
         )
         st.markdown('</div>', unsafe_allow_html=True)
@@ -978,7 +1059,7 @@ with tabs[4]:
         st.text_area(
             "Prompt de slides",
             value=prompt_slides(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa),
-            height=220,
+            height=230,
             key="studio_slides_prompt"
         )
         st.markdown('</div>', unsafe_allow_html=True)
@@ -988,7 +1069,7 @@ with tabs[4]:
         st.text_area(
             "Prompt de flashcards",
             value=prompt_flash(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa),
-            height=220,
+            height=230,
             key="studio_flash_prompt"
         )
         st.markdown('</div>', unsafe_allow_html=True)
@@ -999,7 +1080,7 @@ with tabs[4]:
         st.text_area(
             "Prompt de áudio",
             value=prompt_audio(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa),
-            height=240,
+            height=250,
             key="studio_audio_prompt"
         )
         st.markdown('</div>', unsafe_allow_html=True)
@@ -1009,12 +1090,15 @@ with tabs[4]:
         st.text_area(
             "Prompt de teste",
             value=prompt_teste(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa),
-            height=220,
+            height=230,
             key="studio_teste_prompt"
         )
         st.markdown('</div>', unsafe_allow_html=True)
 
-# AULA COMPLETA
+# ======================
+# TAB AULA COMPLETA
+# ======================
+
 with tabs[5]:
     try:
         days = (prova2 - hoje2).days
