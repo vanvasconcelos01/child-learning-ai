@@ -277,8 +277,14 @@ def checkbox_group(label, options, state_key, columns=3):
     for i, option in enumerate(options):
         widget_key = f"{state_key}_{slugify(option)}"
         default_value = option in selected_set
+
+        # Corrige possíveis estados antigos incompatíveis
+        if widget_key not in st.session_state or not isinstance(st.session_state.get(widget_key), bool):
+            st.session_state[widget_key] = default_value
+
         with cols[i % columns]:
-            marcado = st.checkbox(option, value=default_value, key=widget_key)
+            marcado = st.checkbox(option, key=widget_key)
+
         if marcado:
             novos_selecionados.append(option)
 
@@ -490,10 +496,6 @@ Regras:
 - ser claro e útil
 """
 
-# ======================
-# PROMPTS CURTOS PARA NOTEBOOKLM STUDIO
-# ======================
-
 def prompt_video(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
     return contexto_studio_compacto(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes) + """
 Gere um Video Overview final sobre esse conteúdo.
@@ -579,10 +581,6 @@ Regras:
 - o campo TEXTO PARA COLAR EM "CONTEÚDO DO DIA" deve sair pronto para usar na aba Configuração
 """
 
-# ======================
-# PARSER DO CRONOGRAMA
-# ======================
-
 def extrair_texto_para_conteudo_dia(linha):
     padrao = r'TEXTO PARA COLAR EM "CONTEÚDO DO DIA"\s*:\s*(.*)'
     match = re.search(padrao, linha, flags=re.IGNORECASE)
@@ -625,10 +623,6 @@ st.title("🧠 EduAI Studio - v6.3")
 st.caption("Prompts mais curtos para o NotebookLM Studio, com campos clicáveis e cronograma reutilizável no conteúdo do dia.")
 
 tabs = st.tabs(["👦 Perfil", "🧠 Aprendizagem", "🗓️ Cronograma", "⚙️ Configuração", "🎬 Studio", "📦 Aula Completa"])
-
-# ======================
-# TAB PERFIL
-# ======================
 
 with tabs[0]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -681,10 +675,6 @@ with tabs[0]:
     )
     st.markdown('<div class="small">Essas informações alimentam automaticamente os prompts.</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
-
-# ======================
-# TAB APRENDIZAGEM
-# ======================
 
 with tabs[1]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -754,10 +744,6 @@ with tabs[1]:
     st.markdown('<div class="small">Todos esses itens entram na interpretação dos prompts do Studio.</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ======================
-# TAB CRONOGRAMA
-# ======================
-
 with tabs[2]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Plano de estudo até a prova")
@@ -805,10 +791,6 @@ with tabs[2]:
         st.success("Conteúdo do dia atualizado na aba Configuração.")
 
     st.markdown('</div>', unsafe_allow_html=True)
-
-# ======================
-# TAB CONFIGURAÇÃO
-# ======================
 
 with tabs[3]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -870,10 +852,6 @@ with tabs[3]:
     st.subheader("Resumo do perfil atual")
     st.text_area("Resumo estruturado", value=exportar_perfil_json(), height=240)
     st.markdown('</div>', unsafe_allow_html=True)
-
-# ======================
-# TAB STUDIO
-# ======================
 
 with tabs[4]:
     try:
@@ -942,10 +920,6 @@ with tabs[4]:
             height=220
         )
         st.markdown('</div>', unsafe_allow_html=True)
-
-# ======================
-# TAB AULA COMPLETA
-# ======================
 
 with tabs[5]:
     try:
