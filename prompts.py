@@ -1,6 +1,114 @@
 import streamlit as st
 from profile_logic import resumo_aluno_compacto, modo_estudo
 
+def get_subject_specialization(materia: str) -> str:
+    m = (materia or "").strip().lower()
+
+    if any(x in m for x in ["portugu", "reda", "gram", "liter", "produção textual", "producao textual"]):
+        return (
+            "Assuma postura de especialista em pedagogia da Língua Portuguesa, "
+            "alfabetização, leitura, interpretação de texto, produção textual, gramática contextualizada, "
+            "ortografia e desenvolvimento da linguagem, sempre adaptando à idade e às dificuldades do aluno."
+        )
+
+    if any(x in m for x in ["mat", "geometr", "aritm", "álgebra", "algebra"]):
+        return (
+            "Assuma postura de especialista em Matemática e ensino de exatas, "
+            "com foco em raciocínio lógico, progressão passo a passo, uso de exemplos concretos, "
+            "clareza conceitual e adaptação à idade e às dificuldades do aluno."
+        )
+
+    if any(x in m for x in ["ingl", "english", "espanhol", "idioma", "língua estrangeira", "lingua estrangeira", "francês", "frances"]):
+        return (
+            "Assuma postura de especialista em ensino de idiomas para aluno brasileiro. "
+            "Explique utilizando também o português do Brasil para apoiar a compreensão. "
+            "Mesmo em vídeo e slides, não deixe o material apenas no idioma estudado; "
+            "use explicações, apoio e contextualização em português do Brasil."
+        )
+
+    if "hist" in m:
+        return (
+            "Assuma postura de especialista em História, com foco em linha do tempo, "
+            "contexto histórico, causa e consequência, comparação entre períodos, leitura crítica "
+            "de acontecimentos e adaptação à idade do aluno."
+        )
+
+    if "geogr" in m:
+        return (
+            "Assuma postura de especialista em Geografia, com foco em espaço geográfico, mapas, território, "
+            "paisagem, clima, população, economia, relações sociedade-natureza e leitura de mapas e gráficos."
+        )
+
+    if "ciên" in m or "cien" in m:
+        return (
+            "Assuma postura de especialista em Ciências, com foco em investigação, observação, experimentação, "
+            "corpo humano, meio ambiente, matéria, energia e explicação acessível de fenômenos."
+        )
+
+    if "biolog" in m:
+        return (
+            "Assuma postura de especialista em Biologia, com foco em seres vivos, corpo humano, ecologia, genética, "
+            "evolução e relações entre estrutura e função, sempre com clareza visual e linguagem acessível."
+        )
+
+    if "fís" in m or "fis" in m:
+        return (
+            "Assuma postura de especialista em Física, com foco em fenômenos físicos, movimento, força, energia, "
+            "interpretação de situações-problema e explicação progressiva do conceito ao cálculo."
+        )
+
+    if "quím" in m or "quim" in m:
+        return (
+            "Assuma postura de especialista em Química, com foco em substâncias, misturas, transformações da matéria, "
+            "reações químicas, linguagem simbólica e associação entre teoria e exemplos concretos."
+        )
+
+    if "arte" in m:
+        return (
+            "Assuma postura de especialista em Artes, com foco em leitura de imagem, expressão artística, "
+            "elementos visuais, contexto cultural, produção criativa e apreciação estética, adaptando à idade do aluno."
+        )
+
+    if "filos" in m:
+        return (
+            "Assuma postura de especialista em Filosofia, com foco em pensamento crítico, conceitos centrais, "
+            "interpretação de ideias, argumentação e simplificação didática sem perder profundidade."
+        )
+
+    if "sociolog" in m:
+        return (
+            "Assuma postura de especialista em Sociologia, com foco em sociedade, cultura, cidadania, "
+            "grupos sociais, desigualdade, comportamento coletivo e leitura crítica do cotidiano."
+        )
+
+    if "relig" in m:
+        return (
+            "Assuma postura de especialista em Ensino Religioso, com foco em valores, diversidade, "
+            "tradições, convivência, respeito e compreensão contextualizada, sempre adequada à idade do aluno."
+        )
+
+    if any(x in m for x in ["inform", "tecnolog", "comput", "program", "robótica", "robotica"]):
+        return (
+            "Assuma postura de especialista em tecnologia educacional e informática, "
+            "com foco em lógica, uso prático, linguagem acessível, resolução passo a passo e adaptação ao nível do aluno."
+        )
+
+    return (
+        "Assuma postura de especialista pedagógico na matéria estudada, "
+        "adaptando explicações, exemplos, linguagem e dificuldade à idade e ao perfil do aluno."
+    )
+
+def get_language_support_instruction(materia: str) -> str:
+    m = (materia or "").strip().lower()
+    if any(x in m for x in ["ingl", "english", "espanhol", "idioma", "língua estrangeira", "lingua estrangeira", "francês", "frances"]):
+        return (
+            "IMPORTANTE DE IDIOMA:\n"
+            "- usar o idioma estudado com apoio em português do Brasil\n"
+            "- explicar vocabulário, estruturas e exemplos em português do Brasil também\n"
+            "- vídeo e slides não devem ficar apenas no idioma da matéria"
+        )
+    return ""
+
 def build_base_prompt(data):
     diags = ", ".join(data["diagnosticos"]) if data["diagnosticos"] else "Nenhum"
     return f"""PROFESSOR PARTICULAR
@@ -41,7 +149,14 @@ def contexto_geral(data, materia, conteudo, estilo, situacao, prioridade, dias, 
         "- usar nível compatível com a série\n"
         "- não citar páginas"
     )
+
+    especialidade = get_subject_specialization(materia)
+    idioma = get_language_support_instruction(materia)
+
     return f"""{build_base_prompt(data)}
+ESPECIALIZAÇÃO PEDAGÓGICA DA MATÉRIA
+{especialidade}
+
 CONTEXTO
 Matéria: {materia}
 Conteúdo do dia: {conteudo}
@@ -57,13 +172,19 @@ IMPORTANTE
 - adaptar tudo ao perfil do aluno
 - criar exemplos inéditos
 - considerar o erro comum e a forma de retomada
+{idioma}
 """
 
 def contexto_studio_compacto(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
     modo_fontes = "usar as fontes anexadas como base principal" if usa_fontes else "criar sem depender de fontes anexadas"
     objetivo_dia = st.session_state.get("objetivo_dia", "").strip() or "não informado"
+    especialidade = get_subject_specialization(materia)
+    idioma = get_language_support_instruction(materia)
 
     return f"""CRIE O MATERIAL FINAL PARA O NOTEBOOKLM STUDIO.
+
+ESPECIALIZAÇÃO PEDAGÓGICA DA MATÉRIA
+{especialidade}
 
 CONTEXTO DO ESTUDO
 - Matéria: {materia or 'não informada'}
@@ -85,6 +206,7 @@ REGRAS GERAIS
 - ser claro, útil e direto
 - não explicar como fazer o material
 - gerar o material final pronto para uso
+{idioma}
 """
 
 def prompt_video(data, materia, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
@@ -144,7 +266,13 @@ def prompt_aula(data, materia, conteudo, estilo, situacao, prioridade, dias, sel
     return "\n\n".join(parts)
 
 def prompt_cronograma(data, materia, conteudos, data_hoje, data_prova, alta, media, baixa):
+    especialidade = get_subject_specialization(materia)
+    idioma = get_language_support_instruction(materia)
+
     return f"""{build_base_prompt(data)}
+ESPECIALIZAÇÃO PEDAGÓGICA DA MATÉRIA
+{especialidade}
+
 CRONOGRAMA ATÉ A PROVA
 
 Data de hoje: {data_hoje}
@@ -172,5 +300,7 @@ Regras:
 - máximo de 1 foco principal por dia
 - sessões curtas
 - incluir revisão final no dia anterior
+- o ÚLTIMO DIA ANTES DA PROVA deve ser obrigatoriamente uma REVISÃO GERAL
 - o campo TEXTO PARA COLAR EM "CONTEÚDO DO DIA" deve sair pronto para usar na aba Configuração
+{idioma}
 """
