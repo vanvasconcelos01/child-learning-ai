@@ -54,10 +54,10 @@ def obter_interesses():
     )
 
 def obter_tipo_erro():
-    erro = st.session_state["tipo_erro_mais_comum"]
-    if erro == "Outro" and st.session_state["tipo_erro_outro"].strip():
-        return st.session_state["tipo_erro_outro"].strip()
-    return erro
+    return juntar_multiselect_com_outro(
+        st.session_state["tipo_erro_mais_comum"],
+        st.session_state["tipo_erro_outro"]
+    )
 
 def atualizar_caracteristicas_sugeridas():
     st.session_state["caracteristicas_sugeridas"] = combine_characteristics(
