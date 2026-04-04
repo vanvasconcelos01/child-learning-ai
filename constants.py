@@ -96,7 +96,14 @@ AUTONOMIA_OPTIONS = ["Precisa de muita mediação", "Precisa de alguma mediaçã
 CANAL_OPTIONS = ["Visual", "Auditivo", "Leitura guiada", "Manipulação / concreto", "Misto"]
 FRUSTRACAO_OPTIONS = ["Baixa", "Média", "Boa"]
 NIVEL_OPTIONS = ["Abaixo do esperado", "Adequado", "Acima do esperado"]
-ERRO_OPTIONS = ["Trava", "Chuta", "Dispersa", "Fica ansioso", "Recusa", "Outro"]
+ERRO_OPTIONS = [
+    "trava",
+    "chuta",
+    "dispersa",
+    "fica ansioso",
+    "recusa",
+    "Outro"
+]
 
 ENGAJAMENTO_OPTIONS = [
     "desafios curtos",
