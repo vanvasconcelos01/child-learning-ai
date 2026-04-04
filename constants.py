@@ -193,9 +193,9 @@ DEFAULTS = {
     "escrita_nivel": "Adequado",
     "matematica_nivel": "Adequado",
     "compreensao_oral": "Média",
-    "tipo_erro_mais_comum": "Trava",
+    "tipo_erro_mais_comum": [],
     "tipo_erro_outro": "",
-
+    
     "engajamento": [],
     "engajamento_outro": "",
     "principal_dificuldade": [],
