@@ -110,8 +110,8 @@ with tabs[1]:
     radio_group("Matemática", NIVEL_OPTIONS, "matematica_nivel", horizontal=True)
     radio_group("Compreensão oral", ["Baixa", "Média", "Boa"], "compreensao_oral", horizontal=True)
 
-    radio_group("Tipo de erro mais comum", ERRO_OPTIONS, "tipo_erro_mais_comum", horizontal=True)
-    if st.session_state["tipo_erro_mais_comum"] == "Outro":
+    checkbox_group("Tipo de erro mais comum", ERRO_OPTIONS, "tipo_erro_mais_comum", columns=3)
+    if "Outro" in st.session_state["tipo_erro_mais_comum"]:
         st.text_input("Descreva o tipo de erro mais comum", key="tipo_erro_outro")
 
     st.markdown("<hr>", unsafe_allow_html=True)
