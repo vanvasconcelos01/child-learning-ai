@@ -27,6 +27,8 @@ from profile_logic import (
     exportar_perfil_json,
     obter_cobranca,
     extrair_campos_cronograma,
+    save_named_profile,
+    load_named_profile,
 )
 from prompts import (
     contexto_studio_compacto,
@@ -45,10 +47,19 @@ init_state()
 migrate_legacy_keys()
 inject_styles()
 
-st.title("🧠 EduAI Studio - v7.1")
-st.caption("Versão modular estável, com sincronização entre abas e prompts.")
+if "current_tab" not in st.session_state:
+    st.session_state["current_tab"] = 0
+if "saved_profiles" not in st.session_state:
+    st.session_state["saved_profiles"] = {}
+if "novo_nome_perfil" not in st.session_state:
+    st.session_state["novo_nome_perfil"] = ""
 
-tabs = st.tabs(["👦 Perfil", "🧠 Aprendizagem", "🗓️ Cronograma", "⚙️ Configuração", "🎬 Studio", "📦 Aula Completa"])
+TABS = ["👦 Perfil", "🧠 Aprendizagem", "🗓️ Cronograma", "⚙️ Configuração", "🎬 Studio", "📦 Aula Completa"]
+
+st.title("🧠 EduAI Studio - v7.2")
+st.caption("Versão modular estável, com sincronização entre abas, especialização por matéria e perfis salvos.")
+
+tabs = st.tabs(TABS)
 
 with tabs[0]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -62,6 +73,30 @@ with tabs[0]:
     c1.text_input("Escola", key="escola")
     c2.text_input("Turno", key="turno")
     st.text_input("Nome do responsável", key="responsavel")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.subheader("Salvar ou carregar perfil do aluno")
+    c1, c2 = st.columns([2, 1])
+
+    c1.text_input("Nome para salvar este perfil", key="novo_nome_perfil", placeholder="Ex: Filho 1, Gustavo, Aluna Ana")
+    if c2.button("Salvar aluno", key="salvar_aluno_btn"):
+        nome_salvar = st.session_state["novo_nome_perfil"].strip()
+        if nome_salvar:
+            save_named_profile(nome_salvar)
+            st.success(f"Perfil '{nome_salvar}' salvo com sucesso.")
+        else:
+            st.warning("Digite um nome para salvar o perfil.")
+
+    perfis_salvos = list(st.session_state["saved_profiles"].keys())
+    if perfis_salvos:
+        perfil_escolhido = st.selectbox("Perfis salvos", [""] + perfis_salvos, key="perfil_salvo_select")
+        if st.button("Carregar perfil salvo", key="carregar_perfil_btn"):
+            if perfil_escolhido:
+                load_named_profile(perfil_escolhido)
+                st.success(f"Perfil '{perfil_escolhido}' carregado.")
+                st.rerun()
+
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -94,6 +129,9 @@ with tabs[0]:
     )
 
     st.markdown('<div class="small">As características sugeridas e as adicionais são usadas para adaptar os prompts.</div>', unsafe_allow_html=True)
+    if st.button("Próxima etapa: Aprendizagem", key="goto_aprendizagem_btn"):
+        st.session_state["current_tab"] = 1
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[1]:
@@ -132,6 +170,9 @@ with tabs[1]:
         st.text_input("Outra forma de retomar", key="retomada_outro")
 
     st.markdown('<div class="small">Esses dados entram no cronograma e nos materiais.</div>', unsafe_allow_html=True)
+    if st.button("Próxima etapa: Cronograma", key="goto_cronograma_btn"):
+        st.session_state["current_tab"] = 2
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[2]:
@@ -197,6 +238,9 @@ with tabs[2]:
 
         st.success("Matéria, conteúdo do dia e objetivo foram enviados para a aba Configuração.")
 
+    if st.button("Próxima etapa: Configuração", key="goto_config_btn"):
+        st.session_state["current_tab"] = 3
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[3]:
@@ -238,6 +282,9 @@ with tabs[3]:
         f"Dias até a prova: {(prova2 - hoje2).days} | "
         f"Modo sugerido: {('revisão estratégica' if (prova2 - hoje2).days <= 1 else 'consolidação')}"
     )
+    if st.button("Próxima etapa: Studio", key="goto_studio_btn"):
+        st.session_state["current_tab"] = 4
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -300,6 +347,10 @@ with tabs[4]:
         st.subheader("Teste")
         st.text_area("Prompt de teste", value=prompt_teste(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230)
         st.markdown('</div>', unsafe_allow_html=True)
+
+    if st.button("Próxima etapa: Aula completa", key="goto_aula_btn"):
+        st.session_state["current_tab"] = 5
+        st.rerun()
 
 with tabs[5]:
     try:
