@@ -67,10 +67,27 @@ DIAG_CHARACTERISTICS = {
 }
 
 INTERESSES_OPTIONS = [
-    "games", "histórias de fantasia", "futebol", "Pokémon", "música", "desenhos",
-    "arte", "animais", "dinossauros", "super-heróis", "Minecraft", "Roblox",
-    "ciência", "espaço", "mistério", "aventura", "livros", "corridas",
-    "dança", "tecnologia", "Outro"
+    "games",
+    "histórias de fantasia",
+    "futebol",
+    "Pokémon",
+    "música",
+    "desenhos",
+    "arte",
+    "animais",
+    "dinossauros",
+    "super-heróis",
+    "Minecraft",
+    "Roblox",
+    "ciência",
+    "espaço",
+    "mistério",
+    "aventura",
+    "livros",
+    "corridas",
+    "dança",
+    "tecnologia",
+    "Outro"
 ]
 
 ESCOLA_COBRANCA_OPTIONS = [
@@ -96,6 +113,7 @@ AUTONOMIA_OPTIONS = ["Precisa de muita mediação", "Precisa de alguma mediaçã
 CANAL_OPTIONS = ["Visual", "Auditivo", "Leitura guiada", "Manipulação / concreto", "Misto"]
 FRUSTRACAO_OPTIONS = ["Baixa", "Média", "Boa"]
 NIVEL_OPTIONS = ["Abaixo do esperado", "Adequado", "Acima do esperado"]
+
 ERRO_OPTIONS = [
     "trava",
     "chuta",
@@ -193,9 +211,10 @@ DEFAULTS = {
     "escrita_nivel": "Adequado",
     "matematica_nivel": "Adequado",
     "compreensao_oral": "Média",
+
     "tipo_erro_mais_comum": [],
     "tipo_erro_outro": "",
-    
+
     "engajamento": [],
     "engajamento_outro": "",
     "principal_dificuldade": [],
