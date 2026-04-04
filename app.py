@@ -18,7 +18,6 @@ from constants import (
     SITUACAO_OPTIONS,
     PRIORIDADE_OPTIONS,
 )
-
 from state import init_state, migrate_legacy_keys
 from ui_components import inject_styles, checkbox_group, radio_group
 from profile_logic import (
@@ -41,12 +40,13 @@ from prompts import (
 )
 
 st.set_page_config(page_title="EduAI Studio", page_icon="🧠", layout="wide")
+
 init_state()
 migrate_legacy_keys()
 inject_styles()
 
-st.title("🧠 EduAI Studio - v7.0")
-st.caption("Versão modular, estável e sincronizada.")
+st.title("🧠 EduAI Studio - v7.1")
+st.caption("Versão modular estável, com sincronização entre abas e prompts.")
 
 tabs = st.tabs(["👦 Perfil", "🧠 Aprendizagem", "🗓️ Cronograma", "⚙️ Configuração", "🎬 Studio", "📦 Aula Completa"])
 
@@ -84,7 +84,6 @@ with tabs[0]:
         "Características sugeridas automaticamente pelos diagnósticos",
         value=st.session_state.get("caracteristicas_sugeridas", ""),
         height=120,
-        key="caracteristicas_sugeridas_exibicao",
         disabled=True
     )
 
@@ -94,7 +93,7 @@ with tabs[0]:
         height=120
     )
 
-    st.markdown('<div class="small">As características sugeridas e as adicionais entram nos prompts.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="small">As características sugeridas e as adicionais são usadas para adaptar os prompts.</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[1]:
@@ -176,7 +175,7 @@ with tabs[2]:
         st.session_state["cron_baixa"]
     )
 
-    st.text_area("Prompt de cronograma", value=txt_cron, height=360, key="cron_prompt_textarea")
+    st.text_area("Prompt de cronograma", value=txt_cron, height=360)
 
     st.markdown("**Usar a saída do cronograma na aba Configuração**")
     st.text_area("Cole aqui a linha do dia gerada no cronograma", key="cronograma_linha_do_dia", height=90)
@@ -243,7 +242,7 @@ with tabs[3]:
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Resumo do perfil atual")
-    st.text_area("Resumo estruturado", value=exportar_perfil_json(), height=260, key="config_resumo_textarea")
+    st.text_area("Resumo estruturado", value=exportar_perfil_json(), height=260)
     st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[4]:
@@ -270,7 +269,7 @@ with tabs[4]:
     base_prompt_studio = contexto_studio_compacto(
         perfil, materia, conteudo, estilo, situacao, prioridade, days, usa
     )
-    st.text_area("Base real enviada para os prompts", value=base_prompt_studio, height=340, key="studio_base_real_textarea")
+    st.text_area("Base real enviada para os prompts", value=base_prompt_studio, height=340)
     st.markdown('</div>', unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
@@ -278,28 +277,28 @@ with tabs[4]:
     with c1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Vídeo")
-        st.text_area("Prompt de vídeo", value=prompt_video(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230, key="studio_video_prompt")
+        st.text_area("Prompt de vídeo", value=prompt_video(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230)
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Slides")
-        st.text_area("Prompt de slides", value=prompt_slides(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230, key="studio_slides_prompt")
+        st.text_area("Prompt de slides", value=prompt_slides(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230)
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Flashcards")
-        st.text_area("Prompt de flashcards", value=prompt_flash(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230, key="studio_flash_prompt")
+        st.text_area("Prompt de flashcards", value=prompt_flash(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with c2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Áudio do responsável")
-        st.text_area("Prompt de áudio", value=prompt_audio(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=250, key="studio_audio_prompt")
+        st.text_area("Prompt de áudio", value=prompt_audio(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=250)
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Teste")
-        st.text_area("Prompt de teste", value=prompt_teste(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230, key="studio_teste_prompt")
+        st.text_area("Prompt de teste", value=prompt_teste(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230)
         st.markdown('</div>', unsafe_allow_html=True)
 
 with tabs[5]:
@@ -326,5 +325,5 @@ with tabs[5]:
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Pacote de aula completa")
-    st.text_area("Aula completa", value=aula, height=420, key="aula_completa_textarea")
+    st.text_area("Aula completa", value=aula, height=420)
     st.markdown('</div>', unsafe_allow_html=True)
