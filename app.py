@@ -49,35 +49,60 @@ init_state()
 migrate_legacy_keys()
 inject_styles()
 
+if "current_step" not in st.session_state:
+    st.session_state["current_step"] = "Perfil"
+
+if "step_target" not in st.session_state:
+    st.session_state["step_target"] = st.session_state["current_step"]
+
+if "saved_profiles" not in st.session_state:
+    st.session_state["saved_profiles"] = {}
+
+if "novo_nome_perfil" not in st.session_state:
+    st.session_state["novo_nome_perfil"] = ""
+
+
 def goto_step(step_name: str):
-    st.session_state["current_step"] = step_name
+    st.session_state["step_target"] = step_name
     st.rerun()
+
 
 def render_step_navigation():
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Etapas")
-    st.segmented_control(
+
+    current_idx = STEPS.index(st.session_state["current_step"])
+
+    selected_step = st.segmented_control(
         "Fluxo do app",
         options=STEPS,
-        key="current_step",
-        selection_mode="single",
+        default=st.session_state["current_step"],
+        key="step_selector",
     )
 
-    idx = STEPS.index(st.session_state["current_step"])
+    if selected_step and selected_step != st.session_state["current_step"]:
+        st.session_state["current_step"] = selected_step
+        st.session_state["step_target"] = selected_step
+        st.rerun()
+
     c1, c2, c3 = st.columns([1, 1, 3])
 
     with c1:
-        if idx > 0 and st.button("⬅ Anterior", key=f"prev_{idx}"):
-            goto_step(STEPS[idx - 1])
+        if current_idx > 0 and st.button("⬅ Anterior", key=f"prev_{current_idx}"):
+            goto_step(STEPS[current_idx - 1])
 
     with c2:
-        if idx < len(STEPS) - 1 and st.button("Próxima ➜", key=f"next_{idx}"):
-            goto_step(STEPS[idx + 1])
+        if current_idx < len(STEPS) - 1 and st.button("Próxima ➜", key=f"next_{current_idx}"):
+            goto_step(STEPS[current_idx + 1])
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-st.title("🧠 EduAI Studio - v7.3")
+
+st.title("🧠 EduAI Studio - v7.3.1")
 st.caption("Navegação real por etapas, área opcional da matéria e especialização pedagógica ampliada.")
+
+if st.session_state.get("step_target") and st.session_state["step_target"] != st.session_state["current_step"]:
+    st.session_state["current_step"] = st.session_state["step_target"]
 
 render_step_navigation()
 
@@ -101,7 +126,12 @@ if step == "Perfil":
     st.subheader("Salvar ou carregar perfil do aluno")
     c1, c2 = st.columns([2, 1])
 
-    c1.text_input("Nome para salvar este perfil", key="novo_nome_perfil", placeholder="Ex: Filho 1, Gustavo, Aluna Ana")
+    c1.text_input(
+        "Nome para salvar este perfil",
+        key="novo_nome_perfil",
+        placeholder="Ex: Filho 1, Gustavo, Aluna Ana"
+    )
+
     if c2.button("Salvar aluno", key="salvar_aluno_btn"):
         nome_salvar = st.session_state["novo_nome_perfil"].strip()
         if nome_salvar:
@@ -112,7 +142,11 @@ if step == "Perfil":
 
     perfis_salvos = list(st.session_state["saved_profiles"].keys())
     if perfis_salvos:
-        perfil_escolhido = st.selectbox("Perfis salvos", [""] + perfis_salvos, key="perfil_salvo_select")
+        perfil_escolhido = st.selectbox(
+            "Perfis salvos",
+            [""] + perfis_salvos,
+            key="perfil_salvo_select"
+        )
         if st.button("Carregar perfil salvo", key="carregar_perfil_btn"):
             if perfil_escolhido:
                 load_named_profile(perfil_escolhido)
@@ -149,6 +183,8 @@ if step == "Perfil":
         key="outras_caracteristicas",
         height=120
     )
+
+    st.markdown('<div class="small">As características sugeridas e as adicionais são usadas para adaptar os prompts.</div>', unsafe_allow_html=True)
 
     if st.button("Ir para Aprendizagem", key="goto_aprendizagem_btn"):
         goto_step("Aprendizagem")
@@ -349,28 +385,48 @@ elif step == "Studio":
     with c1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Vídeo")
-        st.text_area("Prompt de vídeo", value=prompt_video(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa), height=230)
+        st.text_area(
+            "Prompt de vídeo",
+            value=prompt_video(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa),
+            height=230
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Slides")
-        st.text_area("Prompt de slides", value=prompt_slides(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa), height=230)
+        st.text_area(
+            "Prompt de slides",
+            value=prompt_slides(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa),
+            height=230
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Flashcards")
-        st.text_area("Prompt de flashcards", value=prompt_flash(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa), height=230)
+        st.text_area(
+            "Prompt de flashcards",
+            value=prompt_flash(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa),
+            height=230
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
     with c2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Áudio do responsável")
-        st.text_area("Prompt de áudio", value=prompt_audio(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa), height=250)
+        st.text_area(
+            "Prompt de áudio",
+            value=prompt_audio(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa),
+            height=250
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Teste")
-        st.text_area("Prompt de teste", value=prompt_teste(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa), height=230)
+        st.text_area(
+            "Prompt de teste",
+            value=prompt_teste(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa),
+            height=230
+        )
         st.markdown('</div>', unsafe_allow_html=True)
 
     if st.button("Ir para Aula Completa", key="goto_aula_btn"):
