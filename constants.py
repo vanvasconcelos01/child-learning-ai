@@ -182,6 +182,26 @@ RETOMADA_OPTIONS = [
 SITUACAO_OPTIONS = ["novo", "ja_visto", "em_dificuldade"]
 PRIORIDADE_OPTIONS = ["alta", "media", "baixa"]
 
+AREA_MATERIA_OPTIONS = [
+    "",
+    "Linguagens",
+    "Exatas",
+    "Ciências da Natureza",
+    "Humanas",
+    "Idiomas",
+    "Artes",
+    "Tecnologia"
+]
+
+STEPS = [
+    "Perfil",
+    "Aprendizagem",
+    "Cronograma",
+    "Configuração",
+    "Studio",
+    "Aula Completa",
+]
+
 DEFAULTS = {
     "nome": "",
     "apelido": "",
@@ -232,10 +252,13 @@ DEFAULTS = {
     "cronograma_linha_do_dia": "",
 
     "mat_did": "",
+    "area_materia": "",
     "conteudo_dia": "",
     "objetivo_dia": "",
     "situacao_conteudo": "novo",
     "prioridade_conteudo": "alta",
+
+    "current_step": "Perfil",
 }
 
 LEGACY_KEY_MAP = {
