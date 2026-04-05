@@ -17,6 +17,8 @@ from constants import (
     ESCOLA_COBRANCA_OPTIONS,
     SITUACAO_OPTIONS,
     PRIORIDADE_OPTIONS,
+    AREA_MATERIA_OPTIONS,
+    STEPS,
 )
 from state import init_state, migrate_legacy_keys
 from ui_components import inject_styles, checkbox_group, radio_group
@@ -47,21 +49,41 @@ init_state()
 migrate_legacy_keys()
 inject_styles()
 
-if "current_tab" not in st.session_state:
-    st.session_state["current_tab"] = 0
-if "saved_profiles" not in st.session_state:
-    st.session_state["saved_profiles"] = {}
-if "novo_nome_perfil" not in st.session_state:
-    st.session_state["novo_nome_perfil"] = ""
+def goto_step(step_name: str):
+    st.session_state["current_step"] = step_name
+    st.rerun()
 
-TABS = ["👦 Perfil", "🧠 Aprendizagem", "🗓️ Cronograma", "⚙️ Configuração", "🎬 Studio", "📦 Aula Completa"]
+def render_step_navigation():
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.subheader("Etapas")
+    st.segmented_control(
+        "Fluxo do app",
+        options=STEPS,
+        key="current_step",
+        selection_mode="single",
+    )
 
-st.title("🧠 EduAI Studio - v7.2")
-st.caption("Versão modular estável, com sincronização entre abas, especialização por matéria e perfis salvos.")
+    idx = STEPS.index(st.session_state["current_step"])
+    c1, c2, c3 = st.columns([1, 1, 3])
 
-tabs = st.tabs(TABS)
+    with c1:
+        if idx > 0 and st.button("⬅ Anterior", key=f"prev_{idx}"):
+            goto_step(STEPS[idx - 1])
 
-with tabs[0]:
+    with c2:
+        if idx < len(STEPS) - 1 and st.button("Próxima ➜", key=f"next_{idx}"):
+            goto_step(STEPS[idx + 1])
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.title("🧠 EduAI Studio - v7.3")
+st.caption("Navegação real por etapas, área opcional da matéria e especialização pedagógica ampliada.")
+
+render_step_navigation()
+
+step = st.session_state["current_step"]
+
+if step == "Perfil":
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Conhecendo a criança")
     c1, c2 = st.columns(2)
@@ -128,13 +150,12 @@ with tabs[0]:
         height=120
     )
 
-    st.markdown('<div class="small">As características sugeridas e as adicionais são usadas para adaptar os prompts.</div>', unsafe_allow_html=True)
-    if st.button("Próxima etapa: Aprendizagem", key="goto_aprendizagem_btn"):
-        st.session_state["current_tab"] = 1
-        st.rerun()
+    if st.button("Ir para Aprendizagem", key="goto_aprendizagem_btn"):
+        goto_step("Aprendizagem")
+
     st.markdown('</div>', unsafe_allow_html=True)
 
-with tabs[1]:
+elif step == "Aprendizagem":
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Perfil de aprendizagem")
 
@@ -169,17 +190,17 @@ with tabs[1]:
     if "Outro" in st.session_state["melhor_forma_retomar"]:
         st.text_input("Outra forma de retomar", key="retomada_outro")
 
-    st.markdown('<div class="small">Esses dados entram no cronograma e nos materiais.</div>', unsafe_allow_html=True)
-    if st.button("Próxima etapa: Cronograma", key="goto_cronograma_btn"):
-        st.session_state["current_tab"] = 2
-        st.rerun()
+    if st.button("Ir para Cronograma", key="goto_cronograma_btn"):
+        goto_step("Cronograma")
+
     st.markdown('</div>', unsafe_allow_html=True)
 
-with tabs[2]:
+elif step == "Cronograma":
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Plano de estudo até a prova")
 
     st.text_input("Matéria", key="cron_materia")
+    st.selectbox("Área da matéria (opcional)", AREA_MATERIA_OPTIONS, key="area_materia")
 
     hoje = st.date_input("Data de hoje", value=datetime.date.today(), key="cron_hoje_input")
     prova = st.date_input("Data da prova", value=datetime.date.today(), key="cron_prova_input")
@@ -208,6 +229,7 @@ with tabs[2]:
     txt_cron = prompt_cronograma(
         get_perfil_data(formatar_data_br(prova)),
         st.session_state["cron_materia"],
+        st.session_state["area_materia"],
         st.session_state["cron_conteudos"],
         formatar_data_br(hoje),
         formatar_data_br(prova),
@@ -218,10 +240,10 @@ with tabs[2]:
 
     st.text_area("Prompt de cronograma", value=txt_cron, height=360)
 
-    st.markdown("**Usar a saída do cronograma na aba Configuração**")
+    st.markdown("**Usar a saída do cronograma na etapa Configuração**")
     st.text_area("Cole aqui a linha do dia gerada no cronograma", key="cronograma_linha_do_dia", height=90)
 
-    if st.button("Usar essa linha na aba Configuração", key="cron_usar_linha_btn"):
+    if st.button("Usar essa linha na Configuração", key="cron_usar_linha_btn"):
         campos = extrair_campos_cronograma(st.session_state["cronograma_linha_do_dia"])
 
         if st.session_state["cron_materia"].strip():
@@ -236,18 +258,19 @@ with tabs[2]:
         if campos["objetivo"]:
             st.session_state["objetivo_dia"] = campos["objetivo"]
 
-        st.success("Matéria, conteúdo do dia e objetivo foram enviados para a aba Configuração.")
+        st.success("Matéria, conteúdo do dia e objetivo foram enviados para Configuração.")
 
-    if st.button("Próxima etapa: Configuração", key="goto_config_btn"):
-        st.session_state["current_tab"] = 3
-        st.rerun()
+    if st.button("Ir para Configuração", key="goto_config_btn"):
+        goto_step("Configuração")
+
     st.markdown('</div>', unsafe_allow_html=True)
 
-with tabs[3]:
+elif step == "Configuração":
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Configuração didática do dia")
 
     st.text_input("Matéria", key="mat_did")
+    st.selectbox("Área da matéria (opcional)", AREA_MATERIA_OPTIONS, key="area_materia")
     st.text_area("Conteúdo do dia", key="conteudo_dia", height=120)
     st.text_input("Objetivo do dia (opcional)", key="objetivo_dia")
 
@@ -282,9 +305,10 @@ with tabs[3]:
         f"Dias até a prova: {(prova2 - hoje2).days} | "
         f"Modo sugerido: {('revisão estratégica' if (prova2 - hoje2).days <= 1 else 'consolidação')}"
     )
-    if st.button("Próxima etapa: Studio", key="goto_studio_btn"):
-        st.session_state["current_tab"] = 4
-        st.rerun()
+
+    if st.button("Ir para Studio", key="goto_studio_btn"):
+        goto_step("Studio")
+
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -292,7 +316,7 @@ with tabs[3]:
     st.text_area("Resumo estruturado", value=exportar_perfil_json(), height=260)
     st.markdown('</div>', unsafe_allow_html=True)
 
-with tabs[4]:
+elif step == "Studio":
     try:
         days = (prova2 - hoje2).days
         estilo = obter_cobranca()
@@ -304,6 +328,7 @@ with tabs[4]:
     perfil = get_perfil_data(formatar_data_br(prova2))
     usa = st.session_state["usa_fontes"]
     materia = st.session_state["mat_did"]
+    area = st.session_state["area_materia"]
     conteudo = st.session_state["conteudo_dia"]
     situacao = st.session_state["situacao_conteudo"]
     prioridade = st.session_state["prioridade_conteudo"]
@@ -314,9 +339,9 @@ with tabs[4]:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Base usada nos prompts")
     base_prompt_studio = contexto_studio_compacto(
-        perfil, materia, conteudo, estilo, situacao, prioridade, days, usa
+        perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa
     )
-    st.text_area("Base real enviada para os prompts", value=base_prompt_studio, height=340)
+    st.text_area("Base real enviada para os prompts", value=base_prompt_studio, height=360)
     st.markdown('</div>', unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
@@ -324,35 +349,34 @@ with tabs[4]:
     with c1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Vídeo")
-        st.text_area("Prompt de vídeo", value=prompt_video(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230)
+        st.text_area("Prompt de vídeo", value=prompt_video(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa), height=230)
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Slides")
-        st.text_area("Prompt de slides", value=prompt_slides(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230)
+        st.text_area("Prompt de slides", value=prompt_slides(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa), height=230)
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Flashcards")
-        st.text_area("Prompt de flashcards", value=prompt_flash(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230)
+        st.text_area("Prompt de flashcards", value=prompt_flash(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa), height=230)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with c2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Áudio do responsável")
-        st.text_area("Prompt de áudio", value=prompt_audio(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=250)
+        st.text_area("Prompt de áudio", value=prompt_audio(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa), height=250)
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Teste")
-        st.text_area("Prompt de teste", value=prompt_teste(perfil, materia, conteudo, estilo, situacao, prioridade, days, usa), height=230)
+        st.text_area("Prompt de teste", value=prompt_teste(perfil, materia, area, conteudo, estilo, situacao, prioridade, days, usa), height=230)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    if st.button("Próxima etapa: Aula completa", key="goto_aula_btn"):
-        st.session_state["current_tab"] = 5
-        st.rerun()
+    if st.button("Ir para Aula Completa", key="goto_aula_btn"):
+        goto_step("Aula Completa")
 
-with tabs[5]:
+elif step == "Aula Completa":
     try:
         days = (prova2 - hoje2).days
         estilo = obter_cobranca()
@@ -365,6 +389,7 @@ with tabs[5]:
     aula = prompt_aula(
         perfil,
         st.session_state["mat_did"],
+        st.session_state["area_materia"],
         st.session_state["conteudo_dia"],
         estilo,
         st.session_state["situacao_conteudo"],
