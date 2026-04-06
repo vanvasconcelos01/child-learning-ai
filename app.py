@@ -21,12 +21,11 @@ from constants import (
     STEPS,
 )
 from state import init_state, migrate_legacy_keys
-from ui_components import inject_styles, checkbox_group, radio_group
+from ui_components import inject_styles, checkbox_group, radio_group, slugify
 from profile_logic import (
     formatar_data_br,
     atualizar_caracteristicas_sugeridas,
     get_perfil_data,
-    exportar_perfil_json,
     obter_cobranca,
     extrair_campos_cronograma,
     save_named_profile,
@@ -49,20 +48,14 @@ init_state()
 migrate_legacy_keys()
 inject_styles()
 
-if "current_step" not in st.session_state:
-    st.session_state["current_step"] = "Perfil"
-
-if "saved_profiles" not in st.session_state:
-    st.session_state["saved_profiles"] = {}
-
-if "novo_nome_perfil" not in st.session_state:
-    st.session_state["novo_nome_perfil"] = ""
-
-if "nav_message" not in st.session_state:
-    st.session_state["nav_message"] = ""
-
-if "nav_message_type" not in st.session_state:
-    st.session_state["nav_message_type"] = "info"
+# Compatibilidade extra caso constants.py ainda não tenha essas chaves novas
+st.session_state.setdefault("current_step", "Perfil")
+st.session_state.setdefault("saved_profiles", {})
+st.session_state.setdefault("novo_nome_perfil", "")
+st.session_state.setdefault("nav_message", "")
+st.session_state.setdefault("nav_message_type", "info")
+st.session_state.setdefault("cron_area_materia", "")
+st.session_state.setdefault("config_area_materia", "")
 
 
 def set_nav_message(msg: str, msg_type: str = "warning"):
@@ -73,6 +66,39 @@ def set_nav_message(msg: str, msg_type: str = "warning"):
 def clear_nav_message():
     st.session_state["nav_message"] = ""
     st.session_state["nav_message_type"] = "info"
+
+
+def sync_checkbox_group_keys(state_key, options):
+    selected = set(st.session_state.get(state_key, []))
+    for option in options:
+        widget_key = f"{state_key}_{slugify(option)}"
+        st.session_state[widget_key] = option in selected
+
+
+def sync_all_checkbox_groups():
+    sync_checkbox_group_keys("interesses", INTERESSES_OPTIONS)
+    sync_checkbox_group_keys("diagnosticos", DIAG_OPTIONS)
+    sync_checkbox_group_keys("tipo_erro_mais_comum", ERRO_OPTIONS)
+    sync_checkbox_group_keys("engajamento", ENGAJAMENTO_OPTIONS)
+    sync_checkbox_group_keys("principal_dificuldade", DIFICULDADE_OPTIONS)
+    sync_checkbox_group_keys("sinais_quando_trava", TRAVA_OPTIONS)
+    sync_checkbox_group_keys("melhor_forma_retomar", RETOMADA_OPTIONS)
+    sync_checkbox_group_keys("cobranca_escola", ESCOLA_COBRANCA_OPTIONS)
+    sync_checkbox_group_keys(
+        "selected_materials",
+        ["Vídeo", "Áudio (responsável)", "Slides", "Flashcards (máx 10)", "Teste"]
+    )
+
+
+def get_profile_base(date_obj=None):
+    if date_obj is None:
+        date_obj = datetime.date.today()
+    atualizar_caracteristicas_sugeridas()
+    return get_perfil_data(formatar_data_br(date_obj))
+
+
+def profile_base_text(date_obj=None):
+    return str(get_profile_base(date_obj))
 
 
 def validate_step(step_name: str):
@@ -182,7 +208,7 @@ def render_step_footer():
             st.rerun()
 
 
-st.title("🧠 EduAI Studio - v7.5")
+st.title("🧠 EduAI Studio - v7.5.1")
 st.caption("Navegação simplificada por etapas e prompts alimentados por uma base única do aluno.")
 
 render_sidebar_navigation()
@@ -241,6 +267,8 @@ if step == "Perfil":
         if st.button("Carregar perfil salvo", key="carregar_perfil_btn"):
             if perfil_escolhido:
                 load_named_profile(perfil_escolhido)
+                sync_all_checkbox_groups()
+                atualizar_caracteristicas_sugeridas()
                 set_nav_message(f"Perfil '{perfil_escolhido}' carregado.", "success")
                 st.rerun()
 
@@ -322,7 +350,7 @@ elif step == "Cronograma":
     st.subheader("Plano de estudo até a prova")
 
     st.text_input("Matéria", key="cron_materia")
-    st.selectbox("Área da matéria (opcional)", AREA_MATERIA_OPTIONS, key="area_materia")
+    st.selectbox("Área da matéria (opcional)", AREA_MATERIA_OPTIONS, key="cron_area_materia")
 
     hoje = st.date_input("Data de hoje", value=datetime.date.today(), key="cron_hoje_input")
     prova = st.date_input("Data da prova", value=datetime.date.today(), key="cron_prova_input")
@@ -330,12 +358,12 @@ elif step == "Cronograma":
     st.caption(f"Data de hoje: {formatar_data_br(hoje)}")
     st.caption(f"Data da prova: {formatar_data_br(prova)}")
 
-    perfil_para_cronograma = get_perfil_data(formatar_data_br(prova))
+    perfil_para_cronograma = get_profile_base(prova)
 
     st.markdown("**Base do aluno usada no cronograma**")
     st.text_area(
         "Resumo do perfil usado",
-        value=exportar_perfil_json(),
+        value=str(perfil_para_cronograma),
         height=220
     )
 
@@ -349,7 +377,7 @@ elif step == "Cronograma":
     txt_cron = prompt_cronograma(
         perfil_para_cronograma,
         st.session_state["cron_materia"],
-        st.session_state["area_materia"],
+        st.session_state["cron_area_materia"],
         st.session_state["cron_conteudos"],
         formatar_data_br(hoje),
         formatar_data_br(prova),
@@ -368,6 +396,8 @@ elif step == "Cronograma":
 
         if st.session_state["cron_materia"].strip():
             st.session_state["mat_did"] = st.session_state["cron_materia"].strip()
+
+        st.session_state["config_area_materia"] = st.session_state["cron_area_materia"]
 
         st.session_state["conteudo_dia"] = (
             campos["texto_colar"]
@@ -389,7 +419,7 @@ elif step == "Configuração":
     st.subheader("Configuração didática do dia")
 
     st.text_input("Matéria", key="mat_did")
-    st.selectbox("Área da matéria (opcional)", AREA_MATERIA_OPTIONS, key="area_materia")
+    st.selectbox("Área da matéria (opcional)", AREA_MATERIA_OPTIONS, key="config_area_materia")
     st.text_area("Conteúdo do dia", key="conteudo_dia", height=120)
     st.text_input("Objetivo do dia (opcional)", key="objetivo_dia")
 
@@ -429,7 +459,8 @@ elif step == "Configuração":
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("Resumo do perfil atual")
-    st.text_area("Resumo estruturado", value=exportar_perfil_json(), height=260)
+    perfil_config = get_profile_base(prova2)
+    st.text_area("Resumo estruturado", value=str(perfil_config), height=260)
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif step == "Studio":
@@ -441,10 +472,10 @@ elif step == "Studio":
         estilo = ""
         prova2 = datetime.date.today()
 
-    perfil = get_perfil_data(formatar_data_br(prova2))
+    perfil = get_profile_base(prova2)
     usa = st.session_state["usa_fontes"]
     materia = st.session_state["mat_did"]
-    area = st.session_state["area_materia"]
+    area = st.session_state["config_area_materia"]
     conteudo = st.session_state["conteudo_dia"]
     situacao = st.session_state["situacao_conteudo"]
     prioridade = st.session_state["prioridade_conteudo"]
@@ -520,11 +551,11 @@ elif step == "Aula Completa":
         estilo = ""
         prova2 = datetime.date.today()
 
-    perfil = get_perfil_data(formatar_data_br(prova2))
+    perfil = get_profile_base(prova2)
     aula = prompt_aula(
         perfil,
         st.session_state["mat_did"],
-        st.session_state["area_materia"],
+        st.session_state["config_area_materia"],
         st.session_state["conteudo_dia"],
         estilo,
         st.session_state["situacao_conteudo"],
