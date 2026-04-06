@@ -48,7 +48,6 @@ init_state()
 migrate_legacy_keys()
 inject_styles()
 
-# Compatibilidade extra caso constants.py ainda não tenha essas chaves novas
 st.session_state.setdefault("current_step", "Perfil")
 st.session_state.setdefault("saved_profiles", {})
 st.session_state.setdefault("novo_nome_perfil", "")
@@ -141,24 +140,18 @@ def validate_step(step_name: str):
     return erros
 
 
-def can_go_to(target_step: str):
-    current_idx = STEPS.index(st.session_state["current_step"])
-    target_idx = STEPS.index(target_step)
-
-    if target_idx <= current_idx:
-        return True, []
-
-    erros = validate_step(st.session_state["current_step"])
-    return len(erros) == 0, erros
-
-
 def goto_step(step_name: str):
-    ok, erros = can_go_to(step_name)
-    if ok:
-        clear_nav_message()
-        st.session_state["current_step"] = step_name
+    erros = validate_step(st.session_state["current_step"])
+
+    if erros:
+        set_nav_message(
+            "⚠️ Alguns campos ainda não foram preenchidos:\n- " + "\n- ".join(erros),
+            "warning"
+        )
     else:
-        set_nav_message("Antes de avançar:\n- " + "\n- ".join(erros), "warning")
+        clear_nav_message()
+
+    st.session_state["current_step"] = step_name
 
 
 def next_step():
@@ -172,6 +165,11 @@ def prev_step():
     if idx > 0:
         clear_nav_message()
         st.session_state["current_step"] = STEPS[idx - 1]
+
+
+def get_step_status(step_name: str):
+    errors = validate_step(step_name)
+    return len(errors) == 0, errors
 
 
 def render_sidebar_navigation():
@@ -192,6 +190,14 @@ def render_sidebar_navigation():
             goto_step(escolha)
             st.rerun()
 
+        st.markdown("### Checklist da etapa atual")
+        ok, errors = get_step_status(st.session_state["current_step"])
+        if ok:
+            st.success("Etapa preenchida o suficiente para seguir.")
+        else:
+            for err in errors:
+                st.caption(f"• {err}")
+
 
 def render_step_footer():
     idx = STEPS.index(st.session_state["current_step"])
@@ -208,8 +214,8 @@ def render_step_footer():
             st.rerun()
 
 
-st.title("🧠 EduAI Studio - v7.5.1")
-st.caption("Navegação simplificada por etapas e prompts alimentados por uma base única do aluno.")
+st.title("🧠 EduAI Studio - v7.6")
+st.caption("Fluxo por etapas com navegação livre, checklist visual e prompts alimentados pela base do aluno.")
 
 render_sidebar_navigation()
 
