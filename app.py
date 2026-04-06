@@ -52,19 +52,100 @@ inject_styles()
 if "current_step" not in st.session_state:
     st.session_state["current_step"] = "Perfil"
 
-if "step_target" not in st.session_state:
-    st.session_state["step_target"] = st.session_state["current_step"]
-
 if "saved_profiles" not in st.session_state:
     st.session_state["saved_profiles"] = {}
 
 if "novo_nome_perfil" not in st.session_state:
     st.session_state["novo_nome_perfil"] = ""
 
+if "nav_message" not in st.session_state:
+    st.session_state["nav_message"] = ""
+
+if "nav_message_type" not in st.session_state:
+    st.session_state["nav_message_type"] = "info"
+
+
+def set_nav_message(msg: str, msg_type: str = "warning"):
+    st.session_state["nav_message"] = msg
+    st.session_state["nav_message_type"] = msg_type
+
+
+def clear_nav_message():
+    st.session_state["nav_message"] = ""
+    st.session_state["nav_message_type"] = "info"
+
+
+def validate_step(step_name: str):
+    erros = []
+
+    if step_name == "Perfil":
+        if not st.session_state.get("nome", "").strip():
+            erros.append("Preencha o nome do aluno.")
+        if not st.session_state.get("idade", "").strip():
+            erros.append("Preencha a idade do aluno.")
+        if not st.session_state.get("serie", "").strip():
+            erros.append("Preencha a série/ano do aluno.")
+
+    elif step_name == "Aprendizagem":
+        if not st.session_state.get("engajamento", []):
+            erros.append("Selecione pelo menos uma opção em 'O que mais engaja'.")
+        if not st.session_state.get("principal_dificuldade", []):
+            erros.append("Selecione pelo menos uma opção em 'Principal dificuldade'.")
+        if not st.session_state.get("melhor_forma_retomar", []):
+            erros.append("Selecione pelo menos uma opção em 'Melhor forma de retomar'.")
+
+    elif step_name == "Cronograma":
+        if not st.session_state.get("cron_materia", "").strip():
+            erros.append("Preencha a matéria do cronograma.")
+        if not st.session_state.get("cron_conteudos", "").strip():
+            erros.append("Preencha os conteúdos da prova.")
+        hoje = st.session_state.get("cron_hoje_input")
+        prova = st.session_state.get("cron_prova_input")
+        if hoje and prova and prova < hoje:
+            erros.append("A data da prova não pode ser anterior à data de hoje.")
+
+    elif step_name == "Configuração":
+        if not st.session_state.get("mat_did", "").strip():
+            erros.append("Preencha a matéria na Configuração.")
+        if not st.session_state.get("conteudo_dia", "").strip():
+            erros.append("Preencha o conteúdo do dia.")
+        if not st.session_state.get("selected_materials", []):
+            erros.append("Selecione pelo menos um material.")
+
+    return erros
+
+
+def can_navigate_to(target_step: str):
+    current_idx = STEPS.index(st.session_state["current_step"])
+    target_idx = STEPS.index(target_step)
+
+    if target_idx <= current_idx:
+        return True, []
+
+    erros = validate_step(st.session_state["current_step"])
+    return len(erros) == 0, erros
+
 
 def goto_step(step_name: str):
-    st.session_state["step_target"] = step_name
-    st.rerun()
+    ok, erros = can_navigate_to(step_name)
+    if ok:
+        clear_nav_message()
+        st.session_state["current_step"] = step_name
+    else:
+        set_nav_message("Antes de avançar:\n- " + "\n- ".join(erros), "warning")
+
+
+def next_step():
+    idx = STEPS.index(st.session_state["current_step"])
+    if idx < len(STEPS) - 1:
+        goto_step(STEPS[idx + 1])
+
+
+def prev_step():
+    idx = STEPS.index(st.session_state["current_step"])
+    if idx > 0:
+        clear_nav_message()
+        st.session_state["current_step"] = STEPS[idx - 1]
 
 
 def render_step_navigation():
@@ -72,37 +153,48 @@ def render_step_navigation():
     st.subheader("Etapas")
 
     current_idx = STEPS.index(st.session_state["current_step"])
+    progresso = (current_idx + 1) / len(STEPS)
+    st.progress(progresso)
+    st.caption(f"Etapa {current_idx + 1} de {len(STEPS)} — {st.session_state['current_step']}")
 
     selected_step = st.segmented_control(
         "Fluxo do app",
         options=STEPS,
         default=st.session_state["current_step"],
-        key="step_selector",
+        key="step_selector"
     )
 
     if selected_step and selected_step != st.session_state["current_step"]:
-        st.session_state["current_step"] = selected_step
-        st.session_state["step_target"] = selected_step
+        goto_step(selected_step)
         st.rerun()
 
-    c1, c2, c3 = st.columns([1, 1, 3])
+    if st.session_state["nav_message"]:
+        if st.session_state["nav_message_type"] == "warning":
+            st.warning(st.session_state["nav_message"])
+        elif st.session_state["nav_message_type"] == "success":
+            st.success(st.session_state["nav_message"])
+        else:
+            st.info(st.session_state["nav_message"])
+
+    c1, c2, c3 = st.columns([1, 1, 4])
 
     with c1:
-        if current_idx > 0 and st.button("⬅ Anterior", key=f"prev_{current_idx}"):
-            goto_step(STEPS[current_idx - 1])
+        if current_idx > 0:
+            if st.button("⬅ Anterior", key=f"prev_{current_idx}"):
+                prev_step()
+                st.rerun()
 
     with c2:
-        if current_idx < len(STEPS) - 1 and st.button("Próxima ➜", key=f"next_{current_idx}"):
-            goto_step(STEPS[current_idx + 1])
+        if current_idx < len(STEPS) - 1:
+            if st.button("Próxima ➜", key=f"next_{current_idx}"):
+                next_step()
+                st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 
-st.title("🧠 EduAI Studio - v7.3.1")
-st.caption("Navegação real por etapas, área opcional da matéria e especialização pedagógica ampliada.")
-
-if st.session_state.get("step_target") and st.session_state["step_target"] != st.session_state["current_step"]:
-    st.session_state["current_step"] = st.session_state["step_target"]
+st.title("🧠 EduAI Studio - v7.4")
+st.caption("Fluxo por etapas com validação, progresso visual e especialização pedagógica por matéria.")
 
 render_step_navigation()
 
@@ -136,9 +228,11 @@ if step == "Perfil":
         nome_salvar = st.session_state["novo_nome_perfil"].strip()
         if nome_salvar:
             save_named_profile(nome_salvar)
-            st.success(f"Perfil '{nome_salvar}' salvo com sucesso.")
+            set_nav_message(f"Perfil '{nome_salvar}' salvo com sucesso.", "success")
+            st.rerun()
         else:
-            st.warning("Digite um nome para salvar o perfil.")
+            set_nav_message("Digite um nome para salvar o perfil.", "warning")
+            st.rerun()
 
     perfis_salvos = list(st.session_state["saved_profiles"].keys())
     if perfis_salvos:
@@ -150,7 +244,7 @@ if step == "Perfil":
         if st.button("Carregar perfil salvo", key="carregar_perfil_btn"):
             if perfil_escolhido:
                 load_named_profile(perfil_escolhido)
-                st.success(f"Perfil '{perfil_escolhido}' carregado.")
+                set_nav_message(f"Perfil '{perfil_escolhido}' carregado.", "success")
                 st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
@@ -188,6 +282,7 @@ if step == "Perfil":
 
     if st.button("Ir para Aprendizagem", key="goto_aprendizagem_btn"):
         goto_step("Aprendizagem")
+        st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -228,6 +323,7 @@ elif step == "Aprendizagem":
 
     if st.button("Ir para Cronograma", key="goto_cronograma_btn"):
         goto_step("Cronograma")
+        st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -294,10 +390,12 @@ elif step == "Cronograma":
         if campos["objetivo"]:
             st.session_state["objetivo_dia"] = campos["objetivo"]
 
-        st.success("Matéria, conteúdo do dia e objetivo foram enviados para Configuração.")
+        set_nav_message("Matéria, conteúdo do dia e objetivo foram enviados para Configuração.", "success")
+        st.rerun()
 
     if st.button("Ir para Configuração", key="goto_config_btn"):
         goto_step("Configuração")
+        st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -344,6 +442,7 @@ elif step == "Configuração":
 
     if st.button("Ir para Studio", key="goto_studio_btn"):
         goto_step("Studio")
+        st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -431,6 +530,7 @@ elif step == "Studio":
 
     if st.button("Ir para Aula Completa", key="goto_aula_btn"):
         goto_step("Aula Completa")
+        st.rerun()
 
 elif step == "Aula Completa":
     try:
