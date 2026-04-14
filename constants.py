@@ -252,7 +252,8 @@ DEFAULTS = {
     "cronograma_linha_do_dia": "",
 
     "mat_did": "",
-    "area_materia": "",
+    "cron_area_materia": "",
+    "config_area_materia": "",
     "conteudo_dia": "",
     "objetivo_dia": "",
     "situacao_conteudo": "novo",
