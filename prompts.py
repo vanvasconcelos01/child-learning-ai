@@ -219,10 +219,18 @@ Prioridade: {prioridade}
 Modo de estudo: {modo_estudo_fn(dias, situacao)}
 Forma de cobrança: {estilo or 'não informada'}
 
+REGRAS PEDAGÓGICAS CRÍTICAS
+- preservar obrigatoriamente os nomes, classificações, categorias e termos oficiais do conteúdo
+- não inventar termos novos
+- não renomear conceitos oficiais
+- pode simplificar a explicação, mas sem trocar o vocabulário formal que pode aparecer na prova
+- se houver um termo técnico no repertório dado, manter esse termo técnico
+
 IMPORTANTE
 {regras}
 - adaptar tudo ao perfil do aluno
-- focar no conteúdo e no que costuma ser mais cobrado para a idade e série dentro do repertório dado
+- focar no conteúdo do dia e no que costuma ser mais cobrado para a idade e série dentro do repertório dado
+- não expandir para assuntos paralelos desnecessários
 - criar exemplos inéditos e completos
 - considerar o erro comum e a forma de retomada
 {idioma}
@@ -265,6 +273,9 @@ REGRAS GERAIS
 - não depender de páginas, imagens, capítulos ou instruções do livro
 - não escrever frases como 'observe a página', 'veja a atividade', 'como mostrado acima'
 - usar o anexo apenas como base de repertório, nunca como dependência
+- preservar obrigatoriamente os termos oficiais do conteúdo
+- não inventar nomes novos para conceitos, categorias ou classificações
+- focar apenas no conteúdo do dia
 - ser claro, útil e direto
 - não explicar como fazer o material
 - gerar o material final pronto para uso
@@ -277,9 +288,18 @@ def prompt_video(data, materia, area, conteudo, objetivo, estilo, situacao, prio
         data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
     ) + """
 Crie o VIDEO OVERVIEW final, pronto para uso.
-Explique o conteúdo de forma clara, envolvente e adaptada ao aluno.
-Inclua exemplos alinhados ao perfil e interesses do aluno, trate o erro comum esperado e finalize com revisão breve.
-O vídeo deve ser totalmente autossuficiente, sem depender do anexo.
+
+Exigências do vídeo:
+- explicar apenas o conteúdo do dia
+- usar exemplos novos, próprios e autossuficientes
+- não usar a imagem, página ou tela do livro como base da explicação
+- não depender visualmente do anexo
+- manter rigorosamente os termos oficiais do conteúdo
+- não inventar nomes substitutos para conceitos formais
+- linguagem clara, envolvente e compatível com a idade do aluno
+- quando fizer uma pergunta ao aluno, inserir uma pausa breve de alguns segundos antes de continuar
+- incluir mini revisão final
+
 Saída final pronta para o Studio.
 """
 
@@ -289,9 +309,23 @@ def prompt_audio(data, materia, area, conteudo, objetivo, estilo, situacao, prio
         data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
     ) + """
 Crie o AUDIO OVERVIEW final, pronto para uso pelo responsável.
-Explique como conduzir esse conteúdo com esse aluno, onde ele pode travar, como retomar e como revisar.
-Use linguagem natural, prática e acolhedora.
-O áudio deve ser totalmente autossuficiente, sem depender do anexo.
+
+Exigências do áudio:
+- áudio curto e objetivo
+- foco apenas no conteúdo do dia
+- resumir a matéria daquele dia
+- explicar como o responsável deve conduzir o estudo
+- apontar onde o aluno pode travar
+- indicar como retomar de forma simples
+- evitar introduções longas
+- manter rigorosamente os termos oficiais do conteúdo
+- não inventar nomes novos para conceitos formais
+- o áudio deve ser totalmente autossuficiente, sem depender do anexo
+
+Meta de estilo:
+- linguagem prática, direta e acolhedora
+- duração esperada curta, algo como 2 a 4 minutos de conteúdo falado
+
 Saída final pronta para o Studio.
 """
 
@@ -301,9 +335,19 @@ def prompt_slides(data, materia, area, conteudo, objetivo, estilo, situacao, pri
         data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
     ) + """
 Crie os SLIDES finais do estudo.
-Organize com progressão clara: conceito, exemplo, erro comum, aplicação e revisão.
-Use pouco texto por slide e linguagem adequada ao aluno.
-Os slides devem ser totalmente autossuficientes, sem depender do anexo.
+
+Exigências dos slides:
+- usar apenas o conteúdo do dia
+- organizar com progressão clara: conceito, exemplo, erro comum, aplicação e revisão
+- usar exemplos novos e próprios
+- não depender da página, imagem ou trecho do livro
+- não usar telas do livro
+- preservar rigorosamente os termos oficiais do conteúdo
+- não inventar nomes novos para conceitos formais
+- pouco texto por slide
+- linguagem adequada à idade do aluno
+- slides totalmente autossuficientes
+
 Saída final pronta para o Studio.
 """
 
@@ -313,8 +357,16 @@ def prompt_flash(data, materia, area, conteudo, objetivo, estilo, situacao, prio
         data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
     ) + """
 Crie os FLASHCARDS finais.
-Gere de 6 a 8 flashcards úteis para esse aluno, com foco em conceito, aplicação, comparação e erro comum.
-Os flashcards devem ser totalmente autossuficientes, sem depender do anexo.
+
+Exigências dos flashcards:
+- gerar no máximo 10 cards
+- usar apenas o conteúdo do dia
+- não expandir para outros conteúdos
+- focar no que é mais importante, mais cobrado e mais sujeito a erro
+- preservar rigorosamente os termos oficiais do conteúdo
+- não inventar nomes novos para conceitos formais
+- cards autossuficientes e claros
+
 Saída final pronta para o Studio.
 """
 
@@ -324,8 +376,16 @@ def prompt_teste(data, materia, area, conteudo, objetivo, estilo, situacao, prio
         data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
     ) + """
 Crie o TESTE final.
-Gere 5 questões adaptadas ao aluno e ao formato de cobrança da escola, com gabarito comentado e erros comuns esperados.
-O teste deve ser totalmente autossuficiente, sem depender do anexo.
+
+Exigências do teste:
+- usar apenas o conteúdo do dia
+- gerar 5 questões
+- adaptar ao formato de cobrança da escola
+- incluir gabarito comentado
+- manter rigorosamente os termos oficiais do conteúdo
+- não inventar nomes novos para conceitos formais
+- teste totalmente autossuficiente
+
 Saída final pronta para o Studio.
 """
 
@@ -338,13 +398,13 @@ def prompt_aula(data, materia, area, conteudo, objetivo, estilo, situacao, prior
         "PACOTE DE AULA COMPLETA"
     ]
     if "Vídeo" in selected:
-        parts.append("[VIDEO OVERVIEW]\n- gerar o material final do vídeo autossuficiente")
+        parts.append("[VIDEO OVERVIEW]\n- gerar o material final do vídeo autossuficiente, sem usar tela do livro e com pausas após perguntas")
     if "Áudio (responsável)" in selected:
-        parts.append("[AUDIO OVERVIEW]\n- gerar o material final do áudio autossuficiente para o responsável")
+        parts.append("[AUDIO OVERVIEW]\n- gerar o material final do áudio curto, objetivo e autossuficiente para o responsável")
     if "Slides" in selected:
-        parts.append("[SLIDES]\n- gerar os slides finais autossuficientes")
+        parts.append("[SLIDES]\n- gerar os slides finais autossuficientes e sem dependência do livro")
     if "Flashcards (máx 10)" in selected:
-        parts.append("[FLASHCARDS]\n- gerar os flashcards prontos e autossuficientes")
+        parts.append("[FLASHCARDS]\n- gerar no máximo 10 flashcards, apenas do conteúdo do dia")
     if "Teste" in selected:
         parts.append("[TESTE]\n- gerar o teste pronto com gabarito e sem depender do anexo")
     parts.append("Fechar com sinais de compreensão e sugestão breve de retomada.")
