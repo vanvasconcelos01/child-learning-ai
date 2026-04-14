@@ -3,138 +3,50 @@ def get_subject_specialization(materia: str, area: str = "") -> str:
     m = (materia or "").strip().lower()
 
     if area_norm == "linguagens":
-        return (
-            "Assuma postura de especialista em Linguagens, com foco em leitura, interpretação, "
-            "produção textual, análise de linguagem, comunicação, repertório e adaptação à idade do aluno."
-        )
-
+        return "Especialista em Linguagens, leitura, interpretação, produção textual e adaptação por idade."
     if area_norm == "exatas":
-        return (
-            "Assuma postura de especialista em Exatas, com foco em raciocínio lógico, progressão passo a passo, "
-            "clareza conceitual, resolução estruturada e adaptação à idade e às dificuldades do aluno."
-        )
-
+        return "Especialista em Exatas, raciocínio lógico, passo a passo e clareza conceitual."
     if area_norm == "ciências da natureza":
-        return (
-            "Assuma postura de especialista em Ciências da Natureza, com foco em investigação, observação, "
-            "fenômenos, relações entre teoria e prática, linguagem acessível e clareza visual."
-        )
-
+        return "Especialista em Ciências da Natureza, investigação, fenômenos e linguagem acessível."
     if area_norm == "humanas":
-        return (
-            "Assuma postura de especialista em Ciências Humanas, com foco em contexto, comparação, "
-            "causa e consequência, leitura crítica, interpretação e adaptação à idade do aluno."
-        )
-
+        return "Especialista em Ciências Humanas, contexto, comparação, causa e consequência."
     if area_norm == "idiomas":
-        return (
-            "Assuma postura de especialista em ensino de idiomas para aluno brasileiro. "
-            "Explique utilizando o português do Brasil como idioma principal de explicação."
-        )
-
+        return "Especialista em ensino de idiomas para aluno brasileiro, explicando principalmente em português do Brasil."
     if area_norm == "artes":
-        return (
-            "Assuma postura de especialista em Artes, com foco em expressão, leitura de imagem, "
-            "elementos visuais, contexto cultural, criatividade e apreciação estética."
-        )
-
+        return "Especialista em Artes, expressão, leitura de imagem e contexto cultural."
     if area_norm == "tecnologia":
-        return (
-            "Assuma postura de especialista em tecnologia educacional e informática, "
-            "com foco em lógica, uso prático, linguagem acessível e resolução passo a passo."
-        )
+        return "Especialista em tecnologia educacional, lógica, uso prático e explicação passo a passo."
 
     if any(x in m for x in ["portugu", "reda", "gram", "liter", "produção textual", "producao textual"]):
-        return (
-            "Assuma postura de especialista em pedagogia da Língua Portuguesa, "
-            "alfabetização, leitura, interpretação de texto, produção textual, gramática contextualizada, "
-            "ortografia e desenvolvimento da linguagem, sempre adaptando à idade e às dificuldades do aluno."
-        )
-
+        return "Especialista em Língua Portuguesa, leitura, interpretação, gramática contextualizada e produção textual."
     if any(x in m for x in ["mat", "geometr", "aritm", "álgebra", "algebra"]):
-        return (
-            "Assuma postura de especialista em Matemática e ensino de exatas, "
-            "com foco em raciocínio lógico, progressão passo a passo, uso de exemplos concretos, "
-            "clareza conceitual e adaptação à idade e às dificuldades do aluno."
-        )
-
+        return "Especialista em Matemática, raciocínio lógico, exemplos concretos e resolução passo a passo."
     if any(x in m for x in ["ingl", "english", "espanhol", "idioma", "língua estrangeira", "lingua estrangeira", "francês", "frances"]):
-        return (
-            "Assuma postura de especialista em ensino de idiomas para aluno brasileiro. "
-            "Explique utilizando o português do Brasil como idioma principal de explicação."
-        )
-
+        return "Especialista em ensino de idiomas para aluno brasileiro, com explicação principal em português do Brasil."
     if "hist" in m:
-        return (
-            "Assuma postura de especialista em História, com foco em linha do tempo, "
-            "contexto histórico, causa e consequência, comparação entre períodos, leitura crítica "
-            "de acontecimentos e adaptação à idade do aluno."
-        )
-
+        return "Especialista em História, linha do tempo, contexto histórico e leitura crítica."
     if "geogr" in m:
-        return (
-            "Assuma postura de especialista em Geografia, com foco em espaço geográfico, mapas, território, "
-            "paisagem, clima, população, economia, relações sociedade-natureza e leitura de mapas e gráficos."
-        )
-
+        return "Especialista em Geografia, espaço geográfico, território, paisagem, mapas e gráficos."
     if "ciên" in m or "cien" in m:
-        return (
-            "Assuma postura de especialista em Ciências, com foco em investigação, observação, experimentação, "
-            "corpo humano, meio ambiente, matéria, energia e explicação acessível de fenômenos."
-        )
-
+        return "Especialista em Ciências, observação, experimentação, corpo humano, meio ambiente, matéria e energia."
     if "biolog" in m:
-        return (
-            "Assuma postura de especialista em Biologia, com foco em seres vivos, corpo humano, ecologia, genética, "
-            "evolução e relações entre estrutura e função, sempre com clareza visual e linguagem acessível."
-        )
-
+        return "Especialista em Biologia, seres vivos, ecologia, genética e relações entre estrutura e função."
     if "fís" in m or "fis" in m:
-        return (
-            "Assuma postura de especialista em Física, com foco em fenômenos físicos, movimento, força, energia, "
-            "interpretação de situações-problema e explicação progressiva do conceito ao cálculo."
-        )
-
+        return "Especialista em Física, fenômenos, movimento, força, energia e interpretação de situações-problema."
     if "quím" in m or "quim" in m:
-        return (
-            "Assuma postura de especialista em Química, com foco em substâncias, misturas, transformações da matéria, "
-            "reações químicas, linguagem simbólica e associação entre teoria e exemplos concretos."
-        )
-
+        return "Especialista em Química, substâncias, misturas, transformações da matéria e reações químicas."
     if "arte" in m:
-        return (
-            "Assuma postura de especialista em Artes, com foco em leitura de imagem, expressão artística, "
-            "elementos visuais, contexto cultural, produção criativa e apreciação estética, adaptando à idade do aluno."
-        )
-
+        return "Especialista em Artes, leitura de imagem, expressão artística e elementos visuais."
     if "filos" in m:
-        return (
-            "Assuma postura de especialista em Filosofia, com foco em pensamento crítico, conceitos centrais, "
-            "interpretação de ideias, argumentação e simplificação didática sem perder profundidade."
-        )
-
+        return "Especialista em Filosofia, pensamento crítico, conceitos centrais e argumentação."
     if "sociolog" in m:
-        return (
-            "Assuma postura de especialista em Sociologia, com foco em sociedade, cultura, cidadania, "
-            "grupos sociais, desigualdade, comportamento coletivo e leitura crítica do cotidiano."
-        )
-
+        return "Especialista em Sociologia, sociedade, cultura, cidadania e leitura crítica do cotidiano."
     if "relig" in m:
-        return (
-            "Assuma postura de especialista em Ensino Religioso, com foco em valores, diversidade, "
-            "tradições, convivência, respeito e compreensão contextualizada, sempre adequada à idade do aluno."
-        )
-
+        return "Especialista em Ensino Religioso, valores, diversidade, convivência e respeito."
     if any(x in m for x in ["inform", "tecnolog", "comput", "program", "robótica", "robotica"]):
-        return (
-            "Assuma postura de especialista em tecnologia educacional e informática, "
-            "com foco em lógica, uso prático, linguagem acessível, resolução passo a passo e adaptação ao nível do aluno."
-        )
+        return "Especialista em tecnologia educacional e informática, lógica e resolução passo a passo."
 
-    return (
-        "Assuma postura de especialista pedagógico na matéria estudada, "
-        "adaptando explicações, exemplos, linguagem e dificuldade à idade e ao perfil do aluno."
-    )
+    return "Especialista pedagógico na matéria estudada, adaptando linguagem e dificuldade à idade e ao perfil do aluno."
 
 
 def get_language_support_instruction(materia: str, area: str = "") -> str:
@@ -145,23 +57,17 @@ def get_language_support_instruction(materia: str, area: str = "") -> str:
         x in m for x in ["ingl", "english", "espanhol", "idioma", "língua estrangeira", "lingua estrangeira", "francês", "frances"]
     ):
         return (
-            "IMPORTANTE DE IDIOMA:\n"
-            "- usar o português do Brasil como idioma principal de explicação\n"
-            "- o idioma estrangeiro deve aparecer como objeto de estudo, vocabulário ou prática\n"
-            "- explicar regras, estruturas e exemplos principalmente em português do Brasil\n"
-            "- vídeo e slides não devem ficar predominantemente no idioma estrangeiro\n"
-            "- o aluno deve entender o conteúdo sem depender do anexo"
+            "IDIOMA:\n"
+            "- usar português do Brasil como idioma principal de explicação\n"
+            "- o idioma estrangeiro deve aparecer como objeto de estudo, prática e vocabulário\n"
+            "- vídeo e slides não devem ficar predominantemente no idioma estrangeiro"
         )
     return ""
 
 
 def build_base_prompt(data):
     diags = ", ".join(data["diagnosticos"]) if data["diagnosticos"] else "Nenhum"
-    return f"""PROFESSOR PARTICULAR
-
-Você é um professor particular especializado em adaptação pedagógica e personalização de materiais.
-
-PERFIL DO ALUNO
+    return f"""PERFIL DO ALUNO
 Aluno: {data['nome']} ({data['apelido']})
 Idade: {data['idade']}
 Série: {data['serie']}
@@ -169,116 +75,47 @@ Escola: {data['escola']}
 Turno: {data['turno']}
 Responsável: {data['responsavel']}
 
-DIAGNÓSTICOS
-{diags}
-
-CARACTERÍSTICAS SUGERIDAS DO DIAGNÓSTICO
-{data.get('caracteristicas_sugeridas', 'não informado') or 'não informado'}
-
-PERFIL DE APRENDIZAGEM
+Diagnósticos: {diags}
+Características sugeridas: {data.get('caracteristicas_sugeridas', 'não informado') or 'não informado'}
+Perfil de aprendizagem:
 {data['perfil_aprendizagem']}
-
-OUTRAS CARACTERÍSTICAS
-{data['outras_caracteristicas'] or 'não informado'}
-
-INTERESSES
-{data['interesses'] or 'não informado'}
-"""
-
-
-def contexto_geral(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, modo_estudo_fn):
-    regras = (
-        "- usar os anexos apenas como embasamento e referência de repertório\n"
-        "- o material final deve ser totalmente autossuficiente\n"
-        "- não depender de página, imagem, exercício, capítulo, figura ou trecho do livro\n"
-        "- não escrever comandos como 'observe a página', 'veja a imagem', 'responda com base no texto acima'\n"
-        "- se usar o anexo, transformar o conteúdo em explicações e exemplos próprios"
-        if usa_fontes else
-        "- criar mesmo sem anexos\n"
-        "- o material final deve ser totalmente autossuficiente\n"
-        "- não citar páginas nem depender de livro\n"
-        "- usar nível compatível com a série"
-    )
-
-    especialidade = get_subject_specialization(materia, area)
-    idioma = get_language_support_instruction(materia, area)
-
-    return f"""{build_base_prompt(data)}
-ESPECIALIZAÇÃO PEDAGÓGICA DA MATÉRIA
-{especialidade}
-
-CONTEXTO
-Matéria: {materia}
-Área da matéria: {area or 'não informada'}
-Conteúdo do dia: {conteudo}
-Objetivo do dia: {objetivo or 'não informado'}
-Data da prova: {data['data_prova']}
-Dias restantes: {dias}
-Situação: {situacao}
-Prioridade: {prioridade}
-Modo de estudo: {modo_estudo_fn(dias, situacao)}
-Forma de cobrança: {estilo or 'não informada'}
-
-REGRAS PEDAGÓGICAS CRÍTICAS
-- preservar obrigatoriamente os nomes, classificações, categorias e termos oficiais do conteúdo
-- não inventar termos novos
-- não renomear conceitos oficiais
-- pode simplificar a explicação, mas sem trocar o vocabulário formal que pode aparecer na prova
-- se houver um termo técnico no repertório dado, manter esse termo técnico
-
-IMPORTANTE
-{regras}
-- adaptar tudo ao perfil do aluno
-- focar no conteúdo do dia e no que costuma ser mais cobrado para a idade e série dentro do repertório dado
-- não expandir para assuntos paralelos desnecessários
-- criar exemplos inéditos e completos
-- considerar o erro comum e a forma de retomada
-{idioma}
+Outras características: {data['outras_caracteristicas'] or 'não informado'}
+Interesses: {data['interesses'] or 'não informado'}
 """
 
 
 def contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    modo_fontes = (
-        "usar anexos apenas como embasamento; o material final deve ser autossuficiente"
-        if usa_fontes else
-        "criar sem depender de anexos; o material final deve ser autossuficiente"
-    )
     especialidade = get_subject_specialization(materia, area)
     idioma = get_language_support_instruction(materia, area)
+    anexos = "usar anexos só como embasamento; material final autossuficiente" if usa_fontes else "criar sem anexos; material final autossuficiente"
 
-    return f"""CRIE O MATERIAL FINAL PARA O NOTEBOOKLM STUDIO.
+    return f"""Crie material final para NotebookLM Studio.
 
-ESPECIALIZAÇÃO PEDAGÓGICA DA MATÉRIA
+MATÉRIA: {materia or 'não informada'}
+ÁREA: {area or 'não informada'}
+CONTEÚDO DO DIA: {conteudo or 'não informado'}
+OBJETIVO DO DIA: {objetivo or 'não informado'}
+DIAS ATÉ A PROVA: {dias}
+SITUAÇÃO: {situacao}
+PRIORIDADE: {prioridade}
+COMO A ESCOLA COBRA: {estilo or 'não informado'}
+ANEXOS: {anexos}
+
+ESPECIALIDADE:
 {especialidade}
 
-CONTEXTO DO ESTUDO
-- Matéria: {materia or 'não informada'}
-- Área da matéria: {area or 'não informada'}
-- Conteúdo do dia: {conteudo or 'não informado'}
-- Objetivo do dia: {objetivo or 'não informado'}
-- Dias até a prova: {dias}
-- Situação do conteúdo: {situacao}
-- Prioridade: {prioridade}
-- Como a escola cobra: {estilo or 'não informado'}
-- Modo de uso: {modo_fontes}
-
-DADOS DO ALUNO
+ALUNO:
 {resumo_aluno_fn(data)}
 
-REGRAS GERAIS
-- usar TODAS as informações acima para adaptar o material
-- considerar idade, série, diagnósticos, características sugeridas do diagnóstico, interesses, engajamento, dificuldade, erro comum e retomada
-- alinhar o material ao jeito que a escola cobra
-- o material precisa ser totalmente autossuficiente
-- não depender de páginas, imagens, capítulos ou instruções do livro
-- não escrever frases como 'observe a página', 'veja a atividade', 'como mostrado acima'
-- usar o anexo apenas como base de repertório, nunca como dependência
-- preservar obrigatoriamente os termos oficiais do conteúdo
+REGRAS:
+- usar somente o conteúdo do dia
+- alinhar ao que costuma ser mais cobrado para a idade/série dentro do repertório dado
+- material totalmente autossuficiente
+- não depender de página, imagem, capítulo, trecho ou tela do livro
+- não escrever "observe a página", "veja a imagem", "como mostrado acima"
+- preservar termos oficiais do conteúdo
 - não inventar nomes novos para conceitos, categorias ou classificações
-- focar apenas no conteúdo do dia
-- ser claro, útil e direto
-- não explicar como fazer o material
-- gerar o material final pronto para uso
+- linguagem clara, útil e direta
 {idioma}
 """
 
@@ -287,20 +124,16 @@ def prompt_video(data, materia, area, conteudo, objetivo, estilo, situacao, prio
     return contexto_studio_compacto(
         data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
     ) + """
-Crie o VIDEO OVERVIEW final, pronto para uso.
+TAREFA: gerar VIDEO OVERVIEW final.
 
-Exigências do vídeo:
+EXIGÊNCIAS:
+- vídeo curto
 - explicar apenas o conteúdo do dia
-- usar exemplos novos, próprios e autossuficientes
-- não usar a imagem, página ou tela do livro como base da explicação
-- não depender visualmente do anexo
-- manter rigorosamente os termos oficiais do conteúdo
-- não inventar nomes substitutos para conceitos formais
-- linguagem clara, envolvente e compatível com a idade do aluno
-- quando fizer uma pergunta ao aluno, inserir uma pausa breve de alguns segundos antes de continuar
-- incluir mini revisão final
-
-Saída final pronta para o Studio.
+- usar exemplos próprios, sem usar página ou imagem do livro
+- manter os termos oficiais do conteúdo
+- não inventar termos substitutos
+- quando fizer pergunta, fazer pausa breve de alguns segundos antes de continuar
+- fechar com mini revisão
 """
 
 
@@ -308,25 +141,18 @@ def prompt_audio(data, materia, area, conteudo, objetivo, estilo, situacao, prio
     return contexto_studio_compacto(
         data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
     ) + """
-Crie o AUDIO OVERVIEW final, pronto para uso pelo responsável.
+TAREFA: gerar AUDIO OVERVIEW final para o responsável.
 
-Exigências do áudio:
+EXIGÊNCIAS:
 - áudio curto e objetivo
 - foco apenas no conteúdo do dia
-- resumir a matéria daquele dia
-- explicar como o responsável deve conduzir o estudo
+- resumir o que deve ser estudado hoje
+- explicar como conduzir a atividade
 - apontar onde o aluno pode travar
-- indicar como retomar de forma simples
-- evitar introduções longas
-- manter rigorosamente os termos oficiais do conteúdo
-- não inventar nomes novos para conceitos formais
-- o áudio deve ser totalmente autossuficiente, sem depender do anexo
-
-Meta de estilo:
-- linguagem prática, direta e acolhedora
-- duração esperada curta, algo como 2 a 4 minutos de conteúdo falado
-
-Saída final pronta para o Studio.
+- indicar como retomar rapidamente
+- manter os termos oficiais do conteúdo
+- não inventar termos substitutos
+- duração esperada curta, cerca de 2 a 4 minutos
 """
 
 
@@ -334,21 +160,15 @@ def prompt_slides(data, materia, area, conteudo, objetivo, estilo, situacao, pri
     return contexto_studio_compacto(
         data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
     ) + """
-Crie os SLIDES finais do estudo.
+TAREFA: gerar SLIDES finais.
 
-Exigências dos slides:
+EXIGÊNCIAS:
 - usar apenas o conteúdo do dia
-- organizar com progressão clara: conceito, exemplo, erro comum, aplicação e revisão
-- usar exemplos novos e próprios
-- não depender da página, imagem ou trecho do livro
-- não usar telas do livro
-- preservar rigorosamente os termos oficiais do conteúdo
-- não inventar nomes novos para conceitos formais
+- progressão: conceito, exemplo, erro comum, aplicação, revisão
+- exemplos próprios
+- sem telas do livro
+- preservar os termos oficiais do conteúdo
 - pouco texto por slide
-- linguagem adequada à idade do aluno
-- slides totalmente autossuficientes
-
-Saída final pronta para o Studio.
 """
 
 
@@ -356,18 +176,13 @@ def prompt_flash(data, materia, area, conteudo, objetivo, estilo, situacao, prio
     return contexto_studio_compacto(
         data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
     ) + """
-Crie os FLASHCARDS finais.
+TAREFA: gerar FLASHCARDS finais.
 
-Exigências dos flashcards:
-- gerar no máximo 10 cards
-- usar apenas o conteúdo do dia
-- não expandir para outros conteúdos
-- focar no que é mais importante, mais cobrado e mais sujeito a erro
-- preservar rigorosamente os termos oficiais do conteúdo
-- não inventar nomes novos para conceitos formais
-- cards autossuficientes e claros
-
-Saída final pronta para o Studio.
+EXIGÊNCIAS:
+- no máximo 10 cards
+- apenas conteúdo do dia
+- focar no mais importante, mais cobrado e mais sujeito a erro
+- preservar os termos oficiais do conteúdo
 """
 
 
@@ -375,39 +190,50 @@ def prompt_teste(data, materia, area, conteudo, objetivo, estilo, situacao, prio
     return contexto_studio_compacto(
         data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
     ) + """
-Crie o TESTE final.
+TAREFA: gerar TESTE final.
 
-Exigências do teste:
+EXIGÊNCIAS:
 - usar apenas o conteúdo do dia
 - gerar 5 questões
 - adaptar ao formato de cobrança da escola
 - incluir gabarito comentado
-- manter rigorosamente os termos oficiais do conteúdo
-- não inventar nomes novos para conceitos formais
-- teste totalmente autossuficiente
-
-Saída final pronta para o Studio.
+- preservar termos oficiais do conteúdo
 """
 
 
 def prompt_aula(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, selected, usa_fontes, modo_estudo_fn):
-    parts = [
-        contexto_geral(
-            data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, modo_estudo_fn
-        ),
-        "PACOTE DE AULA COMPLETA"
-    ]
+    base = f"""AULA COMPLETA
+
+MATÉRIA: {materia}
+ÁREA: {area or 'não informada'}
+CONTEÚDO DO DIA: {conteudo}
+OBJETIVO DO DIA: {objetivo or 'não informado'}
+DIAS ATÉ A PROVA: {dias}
+SITUAÇÃO: {situacao}
+PRIORIDADE: {prioridade}
+MODO DE ESTUDO: {modo_estudo_fn(dias, situacao)}
+COMO A ESCOLA COBRA: {estilo or 'não informado'}
+
+REGRAS:
+- usar só o conteúdo do dia
+- preservar termos oficiais
+- não inventar conceitos
+- material autossuficiente
+"""
+
+    parts = [base]
+
     if "Vídeo" in selected:
-        parts.append("[VIDEO OVERVIEW]\n- gerar o material final do vídeo autossuficiente, sem usar tela do livro e com pausas após perguntas")
+        parts.append("[VIDEO OVERVIEW]\n- vídeo curto, com exemplos próprios e pausas após perguntas")
     if "Áudio (responsável)" in selected:
-        parts.append("[AUDIO OVERVIEW]\n- gerar o material final do áudio curto, objetivo e autossuficiente para o responsável")
+        parts.append("[AUDIO OVERVIEW]\n- áudio curto, direto e objetivo para condução do estudo do dia")
     if "Slides" in selected:
-        parts.append("[SLIDES]\n- gerar os slides finais autossuficientes e sem dependência do livro")
+        parts.append("[SLIDES]\n- slides autossuficientes, sem depender do livro")
     if "Flashcards (máx 10)" in selected:
-        parts.append("[FLASHCARDS]\n- gerar no máximo 10 flashcards, apenas do conteúdo do dia")
+        parts.append("[FLASHCARDS]\n- no máximo 10 cards, apenas do conteúdo do dia")
     if "Teste" in selected:
-        parts.append("[TESTE]\n- gerar o teste pronto com gabarito e sem depender do anexo")
-    parts.append("Fechar com sinais de compreensão e sugestão breve de retomada.")
+        parts.append("[TESTE]\n- 5 questões com gabarito")
+
     return "\n\n".join(parts)
 
 
@@ -416,30 +242,30 @@ def prompt_cronograma(data, materia, area, conteudos, data_hoje, data_prova, alt
     idioma = get_language_support_instruction(materia, area)
 
     return f"""{build_base_prompt(data)}
-ESPECIALIZAÇÃO PEDAGÓGICA DA MATÉRIA
+ESPECIALIDADE:
 {especialidade}
 
 CRONOGRAMA ATÉ A PROVA
 
-Data de hoje: {data_hoje}
-Data da prova: {data_prova}
+Hoje: {data_hoje}
+Prova: {data_prova}
 Matéria: {materia}
-Área da matéria: {area or 'não informada'}
+Área: {area or 'não informada'}
 
-Conteúdos da prova:
+Conteúdos:
 {conteudos}
 
-Prioridade alta:
+Alta prioridade:
 {alta}
 
-Prioridade média:
+Média prioridade:
 {media}
 
-Prioridade baixa:
+Baixa prioridade:
 {baixa}
 
-Gere um plano por dia até a prova.
-Para cada dia, usar exatamente este formato:
+Gerar um plano por dia até a prova.
+Formato obrigatório por linha:
 
 DIA X | DATA | CONTEÚDO DO DIA: ... | OBJETIVO: ... | ATIVIDADE: ... | REVISÃO: ... | TEXTO PARA COLAR EM "CONTEÚDO DO DIA": ...
 
@@ -447,7 +273,7 @@ Regras:
 - máximo de 1 foco principal por dia
 - sessões curtas
 - incluir revisão final no dia anterior
-- o ÚLTIMO DIA ANTES DA PROVA deve ser obrigatoriamente uma REVISÃO GERAL
-- o campo TEXTO PARA COLAR EM "CONTEÚDO DO DIA" deve sair pronto para usar na aba Configuração
+- o último dia antes da prova deve ser revisão geral
+- o texto para colar deve sair pronto para a aba Configuração
 {idioma}
 """
