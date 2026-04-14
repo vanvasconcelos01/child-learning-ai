@@ -1,6 +1,3 @@
-import streamlit as st
-from profile_logic import resumo_aluno_compacto, modo_estudo
-
 def get_subject_specialization(materia: str, area: str = "") -> str:
     area_norm = (area or "").strip().lower()
     m = (materia or "").strip().lower()
@@ -187,7 +184,7 @@ INTERESSES
 {data['interesses'] or 'não informado'}
 """
 
-def contexto_geral(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
+def contexto_geral(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, modo_estudo_fn):
     regras = (
         "- usar as fontes anexadas como base principal\n"
         "- não copiar literalmente\n"
@@ -209,11 +206,12 @@ CONTEXTO
 Matéria: {materia}
 Área da matéria: {area or 'não informada'}
 Conteúdo do dia: {conteudo}
+Objetivo do dia: {objetivo or 'não informado'}
 Data da prova: {data['data_prova']}
 Dias restantes: {dias}
 Situação: {situacao}
 Prioridade: {prioridade}
-Modo de estudo: {modo_estudo(dias, situacao)}
+Modo de estudo: {modo_estudo_fn(dias, situacao)}
 Forma de cobrança: {estilo or 'não informada'}
 
 IMPORTANTE
@@ -224,9 +222,8 @@ IMPORTANTE
 {idioma}
 """
 
-def contexto_studio_compacto(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
+def contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
     modo_fontes = "usar as fontes anexadas como base principal" if usa_fontes else "criar sem depender de fontes anexadas"
-    objetivo_dia = st.session_state.get("objetivo_dia", "").strip() or "não informado"
     especialidade = get_subject_specialization(materia, area)
     idioma = get_language_support_instruction(materia, area)
 
@@ -239,7 +236,7 @@ CONTEXTO DO ESTUDO
 - Matéria: {materia or 'não informada'}
 - Área da matéria: {area or 'não informada'}
 - Conteúdo do dia: {conteudo or 'não informado'}
-- Objetivo do dia: {objetivo_dia}
+- Objetivo do dia: {objetivo or 'não informado'}
 - Dias até a prova: {dias}
 - Situação do conteúdo: {situacao}
 - Prioridade: {prioridade}
@@ -247,7 +244,7 @@ CONTEXTO DO ESTUDO
 - Modo de uso: {modo_fontes}
 
 DADOS DO ALUNO
-{resumo_aluno_compacto(data)}
+{resumo_aluno_fn(data)}
 
 REGRAS GERAIS
 - usar TODAS as informações acima para adaptar o material
@@ -259,47 +256,47 @@ REGRAS GERAIS
 {idioma}
 """
 
-def prompt_video(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
-    return contexto_studio_compacto(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes) + """
+def prompt_video(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
+    return contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn) + """
 Crie o VIDEO OVERVIEW final, pronto para uso.
 Explique o conteúdo de forma clara, envolvente e adaptada ao aluno.
 Inclua exemplos alinhados ao perfil e interesses do aluno, trate o erro comum esperado e finalize com revisão breve.
 Saída final pronta para o Studio.
 """
 
-def prompt_audio(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
-    return contexto_studio_compacto(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes) + """
+def prompt_audio(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
+    return contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn) + """
 Crie o AUDIO OVERVIEW final, pronto para uso pelo responsável.
 Explique como conduzir esse conteúdo com esse aluno, onde ele pode travar, como retomar e como revisar.
 Use linguagem natural, prática e acolhedora.
 Saída final pronta para o Studio.
 """
 
-def prompt_slides(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
-    return contexto_studio_compacto(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes) + """
+def prompt_slides(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
+    return contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn) + """
 Crie os SLIDES finais do estudo.
 Organize com progressão clara: conceito, exemplo, erro comum, aplicação e revisão.
 Use pouco texto por slide e linguagem adequada ao aluno.
 Saída final pronta para o Studio.
 """
 
-def prompt_flash(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
-    return contexto_studio_compacto(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes) + """
+def prompt_flash(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
+    return contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn) + """
 Crie os FLASHCARDS finais.
 Gere de 6 a 8 flashcards úteis para esse aluno, com foco em conceito, aplicação, comparação e erro comum.
 Saída final pronta para o Studio.
 """
 
-def prompt_teste(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes):
-    return contexto_studio_compacto(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes) + """
+def prompt_teste(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
+    return contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn) + """
 Crie o TESTE final.
 Gere 5 questões adaptadas ao aluno e ao formato de cobrança da escola, com gabarito comentado e erros comuns esperados.
 Saída final pronta para o Studio.
 """
 
-def prompt_aula(data, materia, area, conteudo, estilo, situacao, prioridade, dias, selected, usa_fontes):
+def prompt_aula(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, selected, usa_fontes, modo_estudo_fn):
     parts = [
-        contexto_geral(data, materia, area, conteudo, estilo, situacao, prioridade, dias, usa_fontes),
+        contexto_geral(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, modo_estudo_fn),
         "PACOTE DE AULA COMPLETA"
     ]
     if "Vídeo" in selected:
