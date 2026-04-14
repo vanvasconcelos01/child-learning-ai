@@ -67,27 +67,10 @@ DIAG_CHARACTERISTICS = {
 }
 
 INTERESSES_OPTIONS = [
-    "games",
-    "histórias de fantasia",
-    "futebol",
-    "Pokémon",
-    "música",
-    "desenhos",
-    "arte",
-    "animais",
-    "dinossauros",
-    "super-heróis",
-    "Minecraft",
-    "Roblox",
-    "ciência",
-    "espaço",
-    "mistério",
-    "aventura",
-    "livros",
-    "corridas",
-    "dança",
-    "tecnologia",
-    "Outro"
+    "games", "histórias de fantasia", "futebol", "Pokémon", "música", "desenhos",
+    "arte", "animais", "dinossauros", "super-heróis", "Minecraft", "Roblox",
+    "ciência", "espaço", "mistério", "aventura", "livros", "corridas",
+    "dança", "tecnologia", "Outro"
 ]
 
 ESCOLA_COBRANCA_OPTIONS = [
@@ -245,6 +228,7 @@ DEFAULTS = {
     "retomada_outro": "",
 
     "cron_materia": "",
+    "cron_area_materia": "",
     "cron_conteudos": "",
     "cron_alta": "",
     "cron_media": "",
@@ -252,7 +236,6 @@ DEFAULTS = {
     "cronograma_linha_do_dia": "",
 
     "mat_did": "",
-    "cron_area_materia": "",
     "config_area_materia": "",
     "conteudo_dia": "",
     "objetivo_dia": "",
@@ -260,6 +243,10 @@ DEFAULTS = {
     "prioridade_conteudo": "alta",
 
     "current_step": "Perfil",
+    "saved_profiles": {},
+    "novo_nome_perfil": "",
+    "nav_message": "",
+    "nav_message_type": "info",
 }
 
 LEGACY_KEY_MAP = {
