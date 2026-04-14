@@ -48,6 +48,9 @@ init_state()
 migrate_legacy_keys()
 inject_styles()
 
+# -----------------------------------------------------
+# Estado base
+# -----------------------------------------------------
 st.session_state.setdefault("saved_profiles", {})
 st.session_state.setdefault("current_step", "Perfil")
 st.session_state.setdefault("nav_message", "")
@@ -58,19 +61,149 @@ st.session_state.setdefault("perfil_sidebar_select", "")
 if not st.session_state["saved_profiles"]:
     st.session_state["saved_profiles"] = load_saved_profiles()
 
+# -----------------------------------------------------
+# Helpers de persistência UI -> storage
+# -----------------------------------------------------
 
-# =====================================================
-# Helpers
-# =====================================================
+def ui_key(name: str) -> str:
+    return f"ui_{name}"
+
+
+def ensure_ui_value(name: str, default):
+    if name not in st.session_state:
+        st.session_state[name] = default
+    if ui_key(name) not in st.session_state:
+        st.session_state[ui_key(name)] = st.session_state[name]
+
+
+def sync_from_ui(name: str):
+    st.session_state[name] = st.session_state[ui_key(name)]
+
+
+def hydrate_ui_from_storage():
+    keys = [
+        # perfil
+        "nome", "apelido", "idade", "serie", "escola", "turno", "responsavel",
+        "interesses_outro", "outro_diagnostico", "outras_caracteristicas",
+        "novo_nome_perfil",
+        # aprendizagem
+        "tipo_erro_outro", "engajamento_outro", "dificuldade_outro", "trava_outro", "retomada_outro",
+        "atencao_sustentada", "autonomia", "canal_preferencial", "tolerancia_frustracao",
+        "leitura_nivel", "escrita_nivel", "matematica_nivel", "compreensao_oral",
+        # cronograma/config
+        "cron_materia", "cron_area_materia", "cron_conteudos", "cron_alta", "cron_media", "cron_baixa",
+        "cron_hoje", "cron_prova", "cronograma_linha_do_dia",
+        "mat_did", "config_area_materia", "conteudo_dia", "objetivo_dia",
+        "config_hoje", "config_prova", "situacao_conteudo", "prioridade_conteudo",
+        "cobranca_extra", "usa_fontes",
+    ]
+    for k in keys:
+        if k in st.session_state:
+            st.session_state[ui_key(k)] = st.session_state[k]
+
+
+def text_input_persist(label, name, default="", **kwargs):
+    ensure_ui_value(name, default)
+    return st.text_input(
+        label,
+        key=ui_key(name),
+        on_change=sync_from_ui,
+        args=(name,),
+        **kwargs,
+    )
+
+
+def text_area_persist(label, name, default="", **kwargs):
+    ensure_ui_value(name, default)
+    return st.text_area(
+        label,
+        key=ui_key(name),
+        on_change=sync_from_ui,
+        args=(name,),
+        **kwargs,
+    )
+
+
+def selectbox_persist(label, name, options, default=None, **kwargs):
+    if default is None:
+        default = options[0] if options else ""
+    ensure_ui_value(name, default)
+
+    def _sync():
+        sync_from_ui(name)
+
+    current = st.session_state[ui_key(name)]
+    if current not in options and options:
+        st.session_state[ui_key(name)] = default
+        st.session_state[name] = default
+
+    return st.selectbox(
+        label,
+        options,
+        key=ui_key(name),
+        on_change=_sync,
+        **kwargs,
+    )
+
+
+def radio_persist(label, name, options, default=None, horizontal=False):
+    if default is None:
+        default = options[0] if options else ""
+    ensure_ui_value(name, default)
+
+    def _sync():
+        sync_from_ui(name)
+
+    current = st.session_state[ui_key(name)]
+    if current not in options and options:
+        st.session_state[ui_key(name)] = default
+        st.session_state[name] = default
+
+    return st.radio(
+        label,
+        options,
+        key=ui_key(name),
+        on_change=_sync,
+        horizontal=horizontal,
+    )
+
+
+def date_input_persist(label, name, default=None, **kwargs):
+    if default is None:
+        default = datetime.date.today()
+    ensure_ui_value(name, default)
+
+    def _sync():
+        sync_from_ui(name)
+
+    return st.date_input(
+        label,
+        key=ui_key(name),
+        on_change=_sync,
+        **kwargs,
+    )
+
+
+def toggle_persist(label, name, default=False, **kwargs):
+    ensure_ui_value(name, default)
+
+    def _sync():
+        sync_from_ui(name)
+
+    return st.toggle(
+        label,
+        key=ui_key(name),
+        on_change=_sync,
+        **kwargs,
+    )
+
+# -----------------------------------------------------
+# Helpers gerais
+# -----------------------------------------------------
 
 def set_msg(msg, kind="info"):
     st.session_state["nav_message"] = msg
     st.session_state["nav_message_type"] = kind
-
-
-def clear_msg():
-    st.session_state["nav_message"] = ""
-    st.session_state["nav_message_type"] = "info"
 
 
 def goto_step(step):
@@ -163,6 +296,7 @@ def collect_profile_payload():
 def apply_profile_payload(payload: dict):
     for k, v in payload.items():
         st.session_state[k] = v
+    hydrate_ui_from_storage()
     atualizar_caracteristicas_sugeridas()
 
 
@@ -208,11 +342,17 @@ def apply_cronograma_to_config():
     if campos["objetivo"]:
         st.session_state["objetivo_dia"] = campos["objetivo"]
 
+    hydrate_ui_from_storage()
+
     set_msg(
         "Matéria, conteúdo do dia, objetivo e datas foram enviados para Configuração.",
         "success",
     )
 
+# -----------------------------------------------------
+# Inicializa UI shadow keys
+# -----------------------------------------------------
+hydrate_ui_from_storage()
 
 # =====================================================
 # Sidebar
@@ -291,47 +431,31 @@ if st.session_state["nav_message"]:
 
 step = st.session_state["current_step"]
 
-# =====================================================
-# PERFIL
-# =====================================================
-
 if step == "Perfil":
     st.subheader("Perfil do aluno")
 
     c1, c2 = st.columns(2)
     with c1:
-        st.text_input("Nome", key="nome")
-        st.text_input("Idade", key="idade")
-        st.text_input("Escola", key="escola")
+        text_input_persist("Nome", "nome")
+        text_input_persist("Idade", "idade")
+        text_input_persist("Escola", "escola")
 
     with c2:
-        st.text_input("Apelido", key="apelido")
-        st.text_input("Série / Ano", key="serie")
-        st.text_input("Turno", key="turno")
+        text_input_persist("Apelido", "apelido")
+        text_input_persist("Série / Ano", "serie")
+        text_input_persist("Turno", "turno")
 
-    st.text_input("Responsável", key="responsavel")
+    text_input_persist("Responsável", "responsavel")
 
     st.markdown("### Interesses")
-    checkbox_group(
-        "Selecione os interesses",
-        INTERESSES_OPTIONS,
-        "interesses",
-        columns=4
-    )
-
+    checkbox_group("Selecione os interesses", INTERESSES_OPTIONS, "interesses", columns=4)
     if "Outro" in st.session_state["interesses"]:
-        st.text_input("Outro interesse", key="interesses_outro")
+        text_input_persist("Outro interesse", "interesses_outro")
 
     st.markdown("### Diagnósticos")
-    checkbox_group(
-        "Selecione diagnósticos",
-        DIAG_OPTIONS,
-        "diagnosticos",
-        columns=3
-    )
-
+    checkbox_group("Selecione diagnósticos", DIAG_OPTIONS, "diagnosticos", columns=3)
     if "Outro" in st.session_state["diagnosticos"]:
-        st.text_input("Outro diagnóstico", key="outro_diagnostico")
+        text_input_persist("Outro diagnóstico", "outro_diagnostico")
 
     atualizar_caracteristicas_sugeridas()
 
@@ -339,20 +463,15 @@ if step == "Perfil":
         "Características sugeridas automaticamente",
         value=st.session_state["caracteristicas_sugeridas"],
         height=140,
-        disabled=True
+        disabled=True,
     )
 
-    st.text_area(
-        "Outras características",
-        key="outras_caracteristicas",
-        height=120
-    )
+    text_area_persist("Outras características", "outras_caracteristicas", height=120)
 
     st.markdown("### Salvar perfil")
-
     c1, c2 = st.columns([3, 1])
     with c1:
-        st.text_input("Nome para salvar", key="novo_nome_perfil")
+        text_input_persist("Nome para salvar", "novo_nome_perfil")
     with c2:
         if st.button("Salvar", key="save_profile_btn"):
             nome = st.session_state["novo_nome_perfil"].strip()
@@ -363,71 +482,63 @@ if step == "Perfil":
 
     footer_nav()
 
-# =====================================================
-# APRENDIZAGEM
-# =====================================================
-
 elif step == "Aprendizagem":
     st.subheader("Perfil de aprendizagem")
 
-    st.radio("Atenção sustentada", ATENCAO_OPTIONS, key="atencao_sustentada", horizontal=True)
-    st.radio("Autonomia", AUTONOMIA_OPTIONS, key="autonomia", horizontal=True)
-    st.radio("Canal preferencial", CANAL_OPTIONS, key="canal_preferencial", horizontal=True)
-    st.radio("Tolerância à frustração", FRUSTRACAO_OPTIONS, key="tolerancia_frustracao", horizontal=True)
-    st.radio("Leitura", NIVEL_OPTIONS, key="leitura_nivel", horizontal=True)
-    st.radio("Escrita", NIVEL_OPTIONS, key="escrita_nivel", horizontal=True)
-    st.radio("Matemática", NIVEL_OPTIONS, key="matematica_nivel", horizontal=True)
-    st.radio("Compreensão oral", ["Baixa", "Média", "Boa"], key="compreensao_oral", horizontal=True)
+    radio_persist("Atenção sustentada", "atencao_sustentada", ATENCAO_OPTIONS, horizontal=True)
+    radio_persist("Autonomia", "autonomia", AUTONOMIA_OPTIONS, horizontal=True)
+    radio_persist("Canal preferencial", "canal_preferencial", CANAL_OPTIONS, horizontal=True)
+    radio_persist("Tolerância à frustração", "tolerancia_frustracao", FRUSTRACAO_OPTIONS, horizontal=True)
+    radio_persist("Leitura", "leitura_nivel", NIVEL_OPTIONS, horizontal=True)
+    radio_persist("Escrita", "escrita_nivel", NIVEL_OPTIONS, horizontal=True)
+    radio_persist("Matemática", "matematica_nivel", NIVEL_OPTIONS, horizontal=True)
+    radio_persist("Compreensão oral", "compreensao_oral", ["Baixa", "Média", "Boa"], horizontal=True)
 
     st.markdown("### Erros e dificuldades")
 
     checkbox_group("Tipo de erro mais comum", ERRO_OPTIONS, "tipo_erro_mais_comum", 3)
     if "Outro" in st.session_state["tipo_erro_mais_comum"]:
-        st.text_input("Outro tipo de erro", key="tipo_erro_outro")
+        text_input_persist("Outro tipo de erro", "tipo_erro_outro")
 
     checkbox_group("O que mais engaja", ENGAJAMENTO_OPTIONS, "engajamento", 3)
     if "Outro" in st.session_state["engajamento"]:
-        st.text_input("Outro engajamento", key="engajamento_outro")
+        text_input_persist("Outro engajamento", "engajamento_outro")
 
     checkbox_group("Principal dificuldade", DIFICULDADE_OPTIONS, "principal_dificuldade", 3)
     if "Outro" in st.session_state["principal_dificuldade"]:
-        st.text_input("Outra dificuldade", key="dificuldade_outro")
+        text_input_persist("Outra dificuldade", "dificuldade_outro")
 
     checkbox_group("Sinais quando trava", TRAVA_OPTIONS, "sinais_quando_trava", 3)
     if "Outro" in st.session_state["sinais_quando_trava"]:
-        st.text_input("Outro sinal", key="trava_outro")
+        text_input_persist("Outro sinal", "trava_outro")
 
     checkbox_group("Melhor forma de retomar", RETOMADA_OPTIONS, "melhor_forma_retomar", 3)
     if "Outro" in st.session_state["melhor_forma_retomar"]:
-        st.text_input("Outra forma de retomar", key="retomada_outro")
+        text_input_persist("Outra forma de retomar", "retomada_outro")
 
     footer_nav()
-
-# =====================================================
-# CRONOGRAMA
-# =====================================================
 
 elif step == "Cronograma":
     st.subheader("Cronograma até a prova")
 
-    st.text_input("Matéria", key="cron_materia")
-    st.selectbox("Área da matéria", AREA_MATERIA_OPTIONS, key="cron_area_materia")
+    text_input_persist("Matéria", "cron_materia")
+    selectbox_persist("Área da matéria", "cron_area_materia", AREA_MATERIA_OPTIONS)
 
-    hoje = st.date_input("Hoje", value=st.session_state.get("cron_hoje", datetime.date.today()), key="cron_hoje")
-    prova = st.date_input("Prova", value=st.session_state.get("cron_prova", datetime.date.today()), key="cron_prova")
+    hoje = date_input_persist("Hoje", "cron_hoje", default=datetime.date.today())
+    prova = date_input_persist("Prova", "cron_prova", default=datetime.date.today())
 
     st.caption(f"Hoje: {formatar_data_br(hoje)}")
     st.caption(f"Data da prova: {formatar_data_br(prova)}")
 
-    st.text_area("Conteúdos da prova", key="cron_conteudos", height=120)
+    text_area_persist("Conteúdos da prova", "cron_conteudos", height=120)
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.text_area("Alta prioridade", key="cron_alta", height=120)
+        text_area_persist("Alta prioridade", "cron_alta", height=120)
     with c2:
-        st.text_area("Média prioridade", key="cron_media", height=120)
+        text_area_persist("Média prioridade", "cron_media", height=120)
     with c3:
-        st.text_area("Baixa prioridade", key="cron_baixa", height=120)
+        text_area_persist("Baixa prioridade", "cron_baixa", height=120)
 
     perfil = get_profile_base(prova)
 
@@ -451,7 +562,7 @@ elif step == "Cronograma":
         show_prompt_block("Prompt Cronograma", txt, "cronograma")
 
     st.markdown("### Usar linha do cronograma")
-    st.text_area("Cole aqui a linha do dia", key="cronograma_linha_do_dia", height=90)
+    text_area_persist("Cole aqui a linha do dia", "cronograma_linha_do_dia", height=90)
 
     if st.button("Usar esta linha na Configuração"):
         apply_cronograma_to_config()
@@ -459,46 +570,37 @@ elif step == "Cronograma":
 
     footer_nav()
 
-# =====================================================
-# CONFIGURAÇÃO
-# =====================================================
-
 elif step == "Configuração":
     st.subheader("Configuração do estudo")
 
-    st.text_input("Matéria", key="mat_did")
-    st.selectbox("Área da matéria", AREA_MATERIA_OPTIONS, key="config_area_materia")
+    text_input_persist("Matéria", "mat_did")
+    selectbox_persist("Área da matéria", "config_area_materia", AREA_MATERIA_OPTIONS)
 
-    st.text_area("Conteúdo do dia", key="conteudo_dia", height=140)
-    st.text_input("Objetivo do dia", key="objetivo_dia")
+    text_area_persist("Conteúdo do dia", "conteudo_dia", height=140)
+    text_input_persist("Objetivo do dia", "objetivo_dia")
 
-    hoje = st.date_input("Hoje", value=st.session_state.get("config_hoje", datetime.date.today()), key="config_hoje")
-    prova = st.date_input("Prova", value=st.session_state.get("config_prova", datetime.date.today()), key="config_prova")
+    hoje = date_input_persist("Hoje", "config_hoje", default=datetime.date.today())
+    prova = date_input_persist("Prova", "config_prova", default=datetime.date.today())
 
     st.caption(f"Hoje: {formatar_data_br(hoje)}")
     st.caption(f"Data da prova: {formatar_data_br(prova)}")
 
-    st.radio("Situação", SITUACAO_OPTIONS, key="situacao_conteudo", horizontal=True)
-    st.radio("Prioridade", PRIORIDADE_OPTIONS, key="prioridade_conteudo", horizontal=True)
+    radio_persist("Situação", "situacao_conteudo", SITUACAO_OPTIONS, horizontal=True)
+    radio_persist("Prioridade", "prioridade_conteudo", PRIORIDADE_OPTIONS, horizontal=True)
 
-    st.toggle("Usar anexos apenas como embasamento", key="usa_fontes")
+    toggle_persist("Usar anexos apenas como embasamento", "usa_fontes", default=False)
 
     st.markdown("### Como a escola cobra")
-    checkbox_group(
-        "Selecione os formatos mais comuns",
-        ESCOLA_COBRANCA_OPTIONS,
-        "cobranca_escola",
-        3
-    )
+    checkbox_group("Selecione os formatos mais comuns", ESCOLA_COBRANCA_OPTIONS, "cobranca_escola", 3)
     if "Outro" in st.session_state["cobranca_escola"]:
-        st.text_input("Outro tipo de cobrança", key="cobranca_extra")
+        text_input_persist("Outro tipo de cobrança", "cobranca_extra")
 
     st.markdown("### Materiais")
     checkbox_group(
         "Materiais",
         ["Vídeo", "Áudio (responsável)", "Slides", "Flashcards (máx 10)", "Teste"],
         "selected_materials",
-        3
+        3,
     )
 
     if st.session_state["mostrar_debug"]:
@@ -507,10 +609,6 @@ elif step == "Configuração":
             st.code(json.dumps(perfil, ensure_ascii=False, indent=2), language="json")
 
     footer_nav()
-
-# =====================================================
-# STUDIO
-# =====================================================
 
 elif step == "Studio":
     hoje = st.session_state.get("config_hoje", datetime.date.today())
@@ -537,50 +635,41 @@ elif step == "Studio":
     tabs = st.tabs(["Vídeo", "Áudio", "Slides", "Flashcards", "Teste"])
 
     with tabs[0]:
-        video_prompt = prompt_video(
-            perfil, materia, area, conteudo, objetivo,
-            estilo, situacao, prioridade, days,
-            usa, resumo_aluno_compacto
+        show_prompt_block(
+            "Prompt Vídeo",
+            prompt_video(perfil, materia, area, conteudo, objetivo, estilo, situacao, prioridade, days, usa, resumo_aluno_compacto),
+            "video",
         )
-        show_prompt_block("Prompt Vídeo", video_prompt, "video")
 
     with tabs[1]:
-        audio_prompt = prompt_audio(
-            perfil, materia, area, conteudo, objetivo,
-            estilo, situacao, prioridade, days,
-            usa, resumo_aluno_compacto
+        show_prompt_block(
+            "Prompt Áudio",
+            prompt_audio(perfil, materia, area, conteudo, objetivo, estilo, situacao, prioridade, days, usa, resumo_aluno_compacto),
+            "audio",
         )
-        show_prompt_block("Prompt Áudio", audio_prompt, "audio")
 
     with tabs[2]:
-        slides_prompt = prompt_slides(
-            perfil, materia, area, conteudo, objetivo,
-            estilo, situacao, prioridade, days,
-            usa, resumo_aluno_compacto
+        show_prompt_block(
+            "Prompt Slides",
+            prompt_slides(perfil, materia, area, conteudo, objetivo, estilo, situacao, prioridade, days, usa, resumo_aluno_compacto),
+            "slides",
         )
-        show_prompt_block("Prompt Slides", slides_prompt, "slides")
 
     with tabs[3]:
-        flash_prompt = prompt_flash(
-            perfil, materia, area, conteudo, objetivo,
-            estilo, situacao, prioridade, days,
-            usa, resumo_aluno_compacto
+        show_prompt_block(
+            "Prompt Flashcards",
+            prompt_flash(perfil, materia, area, conteudo, objetivo, estilo, situacao, prioridade, days, usa, resumo_aluno_compacto),
+            "flashcards",
         )
-        show_prompt_block("Prompt Flashcards", flash_prompt, "flashcards")
 
     with tabs[4]:
-        teste_prompt = prompt_teste(
-            perfil, materia, area, conteudo, objetivo,
-            estilo, situacao, prioridade, days,
-            usa, resumo_aluno_compacto
+        show_prompt_block(
+            "Prompt Teste",
+            prompt_teste(perfil, materia, area, conteudo, objetivo, estilo, situacao, prioridade, days, usa, resumo_aluno_compacto),
+            "teste",
         )
-        show_prompt_block("Prompt Teste", teste_prompt, "teste")
 
     footer_nav()
-
-# =====================================================
-# AULA COMPLETA
-# =====================================================
 
 elif step == "Aula Completa":
     hoje = st.session_state.get("config_hoje", datetime.date.today())
