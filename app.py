@@ -53,8 +53,8 @@ st.session_state.setdefault("current_step", "Perfil")
 st.session_state.setdefault("nav_message", "")
 st.session_state.setdefault("nav_message_type", "info")
 st.session_state.setdefault("mostrar_debug", False)
+st.session_state.setdefault("perfil_sidebar_select", "")
 
-# Carrega perfis persistidos uma vez
 if not st.session_state["saved_profiles"]:
     st.session_state["saved_profiles"] = load_saved_profiles()
 
@@ -403,6 +403,14 @@ def load_profile_from_disk(profile_name: str):
         st.session_state["saved_profiles"] = profiles
 
 
+def delete_profile_from_disk(profile_name: str):
+    profiles = load_saved_profiles()
+    if profile_name in profiles:
+        del profiles[profile_name]
+        save_saved_profiles(profiles)
+    st.session_state["saved_profiles"] = profiles
+
+
 def apply_cronograma_to_config():
     persist_all_widgets()
     campos = extrair_campos_cronograma(st.session_state["cronograma_linha_do_dia"])
@@ -454,17 +462,35 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("## Perfis salvos")
 
-    saved = list(load_saved_profiles().keys())
-    st.session_state["saved_profiles"] = load_saved_profiles()
+    profiles = load_saved_profiles()
+    st.session_state["saved_profiles"] = profiles
+    saved_names = sorted(list(profiles.keys()))
 
-    if not saved:
+    if not saved_names:
         st.caption("Nenhum perfil salvo.")
     else:
-        for p in saved:
-            if st.button(p, use_container_width=True, key=f"profile_{p}"):
-                load_profile_from_disk(p)
-                set_msg(f"Perfil '{p}' carregado.", "success")
-                st.rerun()
+        selected_profile = st.selectbox(
+            "Selecionar perfil",
+            options=[""] + saved_names,
+            key="perfil_sidebar_select",
+        )
+
+        c1, c2 = st.columns(2)
+
+        with c1:
+            if st.button("Carregar", use_container_width=True, key="sidebar_load_profile"):
+                if selected_profile:
+                    load_profile_from_disk(selected_profile)
+                    set_msg(f"Perfil '{selected_profile}' carregado.", "success")
+                    st.rerun()
+
+        with c2:
+            if st.button("Excluir", use_container_width=True, key="sidebar_delete_profile"):
+                if selected_profile:
+                    delete_profile_from_disk(selected_profile)
+                    st.session_state["perfil_sidebar_select"] = ""
+                    set_msg(f"Perfil '{selected_profile}' excluído.", "success")
+                    st.rerun()
 
     st.markdown("---")
     st.session_state["mostrar_debug"] = st.checkbox(
