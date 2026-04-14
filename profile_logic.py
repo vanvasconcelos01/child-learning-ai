@@ -1,12 +1,28 @@
 import json
 import re
+import datetime
 import streamlit as st
 from constants import PT_MONTHS, DIAG_CHARACTERISTICS
 
+def _coerce_date(d):
+    if isinstance(d, datetime.datetime):
+        return d.date()
+    if isinstance(d, datetime.date):
+        return d
+    if isinstance(d, str):
+        for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
+            try:
+                return datetime.datetime.strptime(d, fmt).date()
+            except ValueError:
+                continue
+    return datetime.date.today()
+
 def formatar_data_br(d):
+    d = _coerce_date(d)
     return d.strftime("%d/%m/%Y")
 
 def formatar_data_extenso(d):
+    d = _coerce_date(d)
     return f"{d.day} de {PT_MONTHS[d.month]} de {d.year}"
 
 def modo_estudo(dias, situacao):
@@ -213,50 +229,3 @@ def extrair_campos_cronograma(linha):
             resultado[chave] = match.group(1).strip()
 
     return resultado
-
-def get_profile_storage_payload():
-    return {
-        "nome": st.session_state["nome"],
-        "apelido": st.session_state["apelido"],
-        "idade": st.session_state["idade"],
-        "serie": st.session_state["serie"],
-        "escola": st.session_state["escola"],
-        "turno": st.session_state["turno"],
-        "interesses": st.session_state["interesses"],
-        "interesses_outro": st.session_state["interesses_outro"],
-        "responsavel": st.session_state["responsavel"],
-        "diagnosticos": st.session_state["diagnosticos"],
-        "outro_diagnostico": st.session_state["outro_diagnostico"],
-        "outras_caracteristicas": st.session_state["outras_caracteristicas"],
-        "caracteristicas_sugeridas": st.session_state["caracteristicas_sugeridas"],
-        "atencao_sustentada": st.session_state["atencao_sustentada"],
-        "autonomia": st.session_state["autonomia"],
-        "canal_preferencial": st.session_state["canal_preferencial"],
-        "tolerancia_frustracao": st.session_state["tolerancia_frustracao"],
-        "leitura_nivel": st.session_state["leitura_nivel"],
-        "escrita_nivel": st.session_state["escrita_nivel"],
-        "matematica_nivel": st.session_state["matematica_nivel"],
-        "compreensao_oral": st.session_state["compreensao_oral"],
-        "tipo_erro_mais_comum": st.session_state["tipo_erro_mais_comum"],
-        "tipo_erro_outro": st.session_state["tipo_erro_outro"],
-        "engajamento": st.session_state["engajamento"],
-        "engajamento_outro": st.session_state["engajamento_outro"],
-        "principal_dificuldade": st.session_state["principal_dificuldade"],
-        "dificuldade_outro": st.session_state["dificuldade_outro"],
-        "sinais_quando_trava": st.session_state["sinais_quando_trava"],
-        "trava_outro": st.session_state["trava_outro"],
-        "melhor_forma_retomar": st.session_state["melhor_forma_retomar"],
-        "retomada_outro": st.session_state["retomada_outro"],
-    }
-
-def save_named_profile(profile_label):
-    if "saved_profiles" not in st.session_state:
-        st.session_state["saved_profiles"] = {}
-    st.session_state["saved_profiles"][profile_label] = get_profile_storage_payload()
-
-def load_named_profile(profile_label):
-    if "saved_profiles" not in st.session_state:
-        return
-    payload = st.session_state["saved_profiles"].get(profile_label, {})
-    for k, v in payload.items():
-        st.session_state[k] = v
