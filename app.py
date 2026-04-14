@@ -34,7 +34,6 @@ from profile_logic import (
     resumo_aluno_compacto,
     modo_estudo,
 )
-
 from prompts import (
     contexto_studio_compacto,
     prompt_video,
@@ -52,19 +51,32 @@ init_state()
 migrate_legacy_keys()
 inject_styles()
 
+# Compatibilidade extra
+st.session_state.setdefault("current_step", "Perfil")
+st.session_state.setdefault("saved_profiles", {})
+st.session_state.setdefault("novo_nome_perfil", "")
+st.session_state.setdefault("nav_message", "")
+st.session_state.setdefault("nav_message_type", "info")
+st.session_state.setdefault("cron_area_materia", "")
+st.session_state.setdefault("config_area_materia", "")
+
+
 def set_nav_message(msg: str, msg_type: str = "warning"):
     st.session_state["nav_message"] = msg
     st.session_state["nav_message_type"] = msg_type
 
+
 def clear_nav_message():
     st.session_state["nav_message"] = ""
     st.session_state["nav_message_type"] = "info"
+
 
 def sync_checkbox_group_keys(state_key, options):
     selected = set(st.session_state.get(state_key, []))
     for option in options:
         widget_key = f"{state_key}_{slugify(option)}"
         st.session_state[widget_key] = option in selected
+
 
 def sync_all_checkbox_groups():
     sync_checkbox_group_keys("interesses", INTERESSES_OPTIONS)
@@ -77,14 +89,16 @@ def sync_all_checkbox_groups():
     sync_checkbox_group_keys("cobranca_escola", ESCOLA_COBRANCA_OPTIONS)
     sync_checkbox_group_keys(
         "selected_materials",
-        ["Vídeo", "Áudio (responsável)", "Slides", "Flashcards (máx 10)", "Teste"]
+        ["Vídeo", "Áudio (responsável)", "Slides", "Flashcards (máx 10)", "Teste"],
     )
+
 
 def get_profile_base(date_obj=None):
     if date_obj is None:
         date_obj = datetime.date.today()
     atualizar_caracteristicas_sugeridas()
     return get_perfil_data(formatar_data_br(date_obj))
+
 
 def validate_step(step_name: str):
     erros = []
@@ -125,6 +139,7 @@ def validate_step(step_name: str):
 
     return erros
 
+
 def set_step(step_name: str):
     erros = validate_step(st.session_state["current_step"])
 
@@ -138,10 +153,12 @@ def set_step(step_name: str):
 
     st.session_state["current_step"] = step_name
 
+
 def go_next():
     idx = STEPS.index(st.session_state["current_step"])
     if idx < len(STEPS) - 1:
         set_step(STEPS[idx + 1])
+
 
 def go_prev():
     idx = STEPS.index(st.session_state["current_step"])
@@ -149,9 +166,11 @@ def go_prev():
         clear_nav_message()
         st.session_state["current_step"] = STEPS[idx - 1]
 
+
 def get_step_status(step_name: str):
     errors = validate_step(step_name)
     return len(errors) == 0, errors
+
 
 def apply_cronograma_to_config():
     campos = extrair_campos_cronograma(st.session_state["cronograma_linha_do_dia"])
@@ -174,6 +193,7 @@ def apply_cronograma_to_config():
         "Matéria, conteúdo do dia e objetivo foram enviados para Configuração.",
         "success",
     )
+
 
 def render_sidebar_navigation():
     with st.sidebar:
@@ -200,9 +220,10 @@ def render_sidebar_navigation():
             for err in errors:
                 st.caption(f"• {err}")
 
+
 def render_step_footer():
     idx = STEPS.index(st.session_state["current_step"])
-    c1, c2, c3 = st.columns([1, 1, 4])
+    c1, c2, _ = st.columns([1, 1, 4])
 
     with c1:
         if idx > 0:
@@ -220,8 +241,9 @@ def render_step_footer():
                 on_click=go_next,
             )
 
+
 st.title("🧠 EduAI Studio - pacote revisado")
-st.caption("Navegação estável, perfil consolidado nos prompts e fluxo revisado.")
+st.caption("Navegação estável, perfil consolidado nos prompts e materiais autossuficientes.")
 
 render_sidebar_navigation()
 
@@ -236,41 +258,86 @@ if st.session_state["nav_message"]:
 step = st.session_state["current_step"]
 
 if step == "Perfil":
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("Conhecendo a criança")
-    c1, c2 = st.columns(2)
+    with st.form("perfil_form", clear_on_submit=False):
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader("Conhecendo a criança")
+        c1, c2 = st.columns(2)
 
-    c1.text_input("Nome", key="nome")
-    c2.text_input("Apelido", key="apelido")
-    c1.text_input("Idade", key="idade")
-    c2.text_input("Série / Ano", key="serie")
-    c1.text_input("Escola", key="escola")
-    c2.text_input("Turno", key="turno")
-    st.text_input("Nome do responsável", key="responsavel")
-    st.markdown("</div>", unsafe_allow_html=True)
+        c1.text_input("Nome", key="nome")
+        c2.text_input("Apelido", key="apelido")
+        c1.text_input("Idade", key="idade")
+        c2.text_input("Série / Ano", key="serie")
+        c1.text_input("Escola", key="escola")
+        c2.text_input("Turno", key="turno")
+        st.text_input("Nome do responsável", key="responsavel")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("Salvar ou carregar perfil do aluno")
-    c1, c2 = st.columns([2, 1])
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader("Interesses")
+        checkbox_group("Selecione os interesses da criança", INTERESSES_OPTIONS, "interesses", columns=4)
+        if "Outro" in st.session_state["interesses"]:
+            st.text_input("Outro interesse", key="interesses_outro")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    c1.text_input(
-        "Nome para salvar este perfil",
-        key="novo_nome_perfil",
-        placeholder="Ex: Filho 1, Gustavo, Aluna Ana",
-    )
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader("Diagnósticos e características")
+        checkbox_group("Selecione um ou mais diagnósticos", DIAG_OPTIONS, "diagnosticos", columns=3)
 
-    if c2.button("Salvar aluno", key="salvar_aluno_btn"):
-        nome_salvar = st.session_state["novo_nome_perfil"].strip()
-        if nome_salvar:
-            save_named_profile(nome_salvar)
-            set_nav_message(f"Perfil '{nome_salvar}' salvo com sucesso.", "success")
+        if "Outro" in st.session_state["diagnosticos"]:
+            st.text_input("Qual outro diagnóstico?", key="outro_diagnostico")
+
+        atualizar_caracteristicas_sugeridas()
+
+        st.text_area(
+            "Características sugeridas automaticamente pelos diagnósticos",
+            value=st.session_state.get("caracteristicas_sugeridas", ""),
+            height=120,
+            disabled=True,
+        )
+
+        st.text_area(
+            "Outras características (editável)",
+            key="outras_caracteristicas",
+            height=120,
+        )
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader("Salvar ou carregar perfil do aluno")
+        c1, c2 = st.columns([2, 1])
+
+        c1.text_input(
+            "Nome para salvar este perfil",
+            key="novo_nome_perfil",
+            placeholder="Ex: Filho 1, Gustavo, Aluna Ana",
+        )
+
+        salvar_perfil = c2.form_submit_button("Salvar perfil")
+        salvar_e_ir = st.form_submit_button("Salvar e ir para Aprendizagem")
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        if salvar_perfil:
+            atualizar_caracteristicas_sugeridas()
+            nome_salvar = st.session_state["novo_nome_perfil"].strip()
+            if nome_salvar:
+                save_named_profile(nome_salvar)
+            set_nav_message("Perfil salvo com sucesso.", "success")
             st.rerun()
-        else:
-            set_nav_message("Digite um nome para salvar o perfil.", "warning")
+
+        if salvar_e_ir:
+            atualizar_caracteristicas_sugeridas()
+            nome_salvar = st.session_state["novo_nome_perfil"].strip()
+            if nome_salvar:
+                save_named_profile(nome_salvar)
+            clear_nav_message()
+            st.session_state["current_step"] = "Aprendizagem"
             st.rerun()
 
     perfis_salvos = list(st.session_state["saved_profiles"].keys())
     if perfis_salvos:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
         perfil_escolhido = st.selectbox(
             "Perfis salvos",
             [""] + perfis_salvos,
@@ -283,40 +350,9 @@ if step == "Perfil":
                 atualizar_caracteristicas_sugeridas()
                 set_nav_message(f"Perfil '{perfil_escolhido}' carregado.", "success")
                 st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("Interesses")
-    checkbox_group("Selecione os interesses da criança", INTERESSES_OPTIONS, "interesses", columns=4)
-    if "Outro" in st.session_state["interesses"]:
-        st.text_input("Outro interesse", key="interesses_outro")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("Diagnósticos e características")
-    checkbox_group("Selecione um ou mais diagnósticos", DIAG_OPTIONS, "diagnosticos", columns=3)
-
-    if "Outro" in st.session_state["diagnosticos"]:
-        st.text_input("Qual outro diagnóstico?", key="outro_diagnostico")
-
-    atualizar_caracteristicas_sugeridas()
-
-    st.text_area(
-        "Características sugeridas automaticamente pelos diagnósticos",
-        value=st.session_state.get("caracteristicas_sugeridas", ""),
-        height=120,
-        disabled=True,
-    )
-
-    st.text_area(
-        "Outras características (editável)",
-        key="outras_caracteristicas",
-        height=120,
-    )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     render_step_footer()
-    st.markdown("</div>", unsafe_allow_html=True)
 
 elif step == "Aprendizagem":
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -357,54 +393,61 @@ elif step == "Aprendizagem":
     st.markdown("</div>", unsafe_allow_html=True)
 
 elif step == "Cronograma":
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("Plano de estudo até a prova")
+    with st.form("cronograma_form", clear_on_submit=False):
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader("Plano de estudo até a prova")
 
-    st.text_input("Matéria", key="cron_materia")
-    st.selectbox("Área da matéria (opcional)", AREA_MATERIA_OPTIONS, key="cron_area_materia")
+        st.text_input("Matéria", key="cron_materia")
+        st.selectbox("Área da matéria (opcional)", AREA_MATERIA_OPTIONS, key="cron_area_materia")
 
-    hoje = st.date_input("Data de hoje", value=datetime.date.today(), key="cron_hoje_input")
-    prova = st.date_input("Data da prova", value=datetime.date.today(), key="cron_prova_input")
+        hoje = st.date_input("Data de hoje", value=datetime.date.today(), key="cron_hoje_input")
+        prova = st.date_input("Data da prova", value=datetime.date.today(), key="cron_prova_input")
 
-    perfil = get_profile_base(prova)
+        perfil = get_profile_base(prova)
 
-    st.text_area(
-        "Perfil consolidado usado no cronograma",
-        value=json.dumps(perfil, ensure_ascii=False, indent=2),
-        height=220,
-    )
+        st.text_area(
+            "Perfil consolidado usado no cronograma",
+            value=json.dumps(perfil, ensure_ascii=False, indent=2),
+            height=220,
+        )
 
-    st.text_area("Conteúdos da prova", key="cron_conteudos", height=120)
+        st.text_area("Conteúdos da prova", key="cron_conteudos", height=120)
 
-    a1, a2, a3 = st.columns(3)
-    a1.text_area("Prioridade alta", key="cron_alta", height=110)
-    a2.text_area("Prioridade média", key="cron_media", height=110)
-    a3.text_area("Prioridade baixa", key="cron_baixa", height=110)
+        a1, a2, a3 = st.columns(3)
+        a1.text_area("Prioridade alta", key="cron_alta", height=110)
+        a2.text_area("Prioridade média", key="cron_media", height=110)
+        a3.text_area("Prioridade baixa", key="cron_baixa", height=110)
 
-    txt_cron = prompt_cronograma(
-        perfil,
-        st.session_state["cron_materia"],
-        st.session_state["cron_area_materia"],
-        st.session_state["cron_conteudos"],
-        formatar_data_br(hoje),
-        formatar_data_br(prova),
-        st.session_state["cron_alta"],
-        st.session_state["cron_media"],
-        st.session_state["cron_baixa"],
-    )
+        txt_cron = prompt_cronograma(
+            perfil,
+            st.session_state["cron_materia"],
+            st.session_state["cron_area_materia"],
+            st.session_state["cron_conteudos"],
+            formatar_data_br(hoje),
+            formatar_data_br(prova),
+            st.session_state["cron_alta"],
+            st.session_state["cron_media"],
+            st.session_state["cron_baixa"],
+        )
 
-    st.text_area("Prompt de cronograma", value=txt_cron, height=380)
+        st.text_area("Prompt de cronograma", value=txt_cron, height=380)
 
-    st.text_area("Cole aqui a linha do dia gerada no cronograma", key="cronograma_linha_do_dia", height=90)
+        st.text_area("Cole aqui a linha do dia gerada no cronograma", key="cronograma_linha_do_dia", height=90)
 
-    st.button(
-        "Usar essa linha na Configuração",
-        key="cron_usar_linha_btn",
-        on_click=apply_cronograma_to_config,
-    )
+        salvar_cron = st.form_submit_button("Salvar cronograma")
+        usar_linha = st.form_submit_button("Usar essa linha na Configuração")
+
+        if salvar_cron:
+            set_nav_message("Cronograma salvo.", "success")
+            st.rerun()
+
+        if usar_linha:
+            apply_cronograma_to_config()
+            st.rerun()
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     render_step_footer()
-    st.markdown("</div>", unsafe_allow_html=True)
 
 elif step == "Configuração":
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -417,9 +460,6 @@ elif step == "Configuração":
 
     hoje2 = st.date_input("Data de hoje", value=datetime.date.today(), key="config_did_hoje")
     prova2 = st.date_input("Data da prova", value=datetime.date.today(), key="config_did_prova")
-
-    st.caption(f"Data de hoje: {formatar_data_br(hoje2)}")
-    st.caption(f"Data da prova: {formatar_data_br(prova2)}")
 
     radio_group("Situação do conteúdo", SITUACAO_OPTIONS, "situacao_conteudo", horizontal=True)
     radio_group("Prioridade do conteúdo", PRIORIDADE_OPTIONS, "prioridade_conteudo", horizontal=True)
