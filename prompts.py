@@ -136,6 +136,7 @@ def get_subject_specialization(materia: str, area: str = "") -> str:
         "adaptando explicações, exemplos, linguagem e dificuldade à idade e ao perfil do aluno."
     )
 
+
 def get_language_support_instruction(materia: str, area: str = "") -> str:
     area_norm = (area or "").strip().lower()
     m = (materia or "").strip().lower()
@@ -152,6 +153,7 @@ def get_language_support_instruction(materia: str, area: str = "") -> str:
             "- o aluno deve entender o conteúdo sem depender do anexo"
         )
     return ""
+
 
 def build_base_prompt(data):
     diags = ", ".join(data["diagnosticos"]) if data["diagnosticos"] else "Nenhum"
@@ -182,6 +184,7 @@ OUTRAS CARACTERÍSTICAS
 INTERESSES
 {data['interesses'] or 'não informado'}
 """
+
 
 def contexto_geral(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, modo_estudo_fn):
     regras = (
@@ -225,6 +228,7 @@ IMPORTANTE
 {idioma}
 """
 
+
 def contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
     modo_fontes = (
         "usar anexos apenas como embasamento; o material final deve ser autossuficiente"
@@ -267,61 +271,85 @@ REGRAS GERAIS
 {idioma}
 """
 
+
 def prompt_video(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    return contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn) + """
+    return contexto_studio_compacto(
+        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
+    ) + """
 Crie o VIDEO OVERVIEW final, pronto para uso.
 Explique o conteúdo de forma clara, envolvente e adaptada ao aluno.
 Inclua exemplos alinhados ao perfil e interesses do aluno, trate o erro comum esperado e finalize com revisão breve.
+O vídeo deve ser totalmente autossuficiente, sem depender do anexo.
 Saída final pronta para o Studio.
 """
 
+
 def prompt_audio(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    return contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn) + """
+    return contexto_studio_compacto(
+        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
+    ) + """
 Crie o AUDIO OVERVIEW final, pronto para uso pelo responsável.
 Explique como conduzir esse conteúdo com esse aluno, onde ele pode travar, como retomar e como revisar.
 Use linguagem natural, prática e acolhedora.
+O áudio deve ser totalmente autossuficiente, sem depender do anexo.
 Saída final pronta para o Studio.
 """
 
+
 def prompt_slides(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    return contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn) + """
+    return contexto_studio_compacto(
+        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
+    ) + """
 Crie os SLIDES finais do estudo.
 Organize com progressão clara: conceito, exemplo, erro comum, aplicação e revisão.
 Use pouco texto por slide e linguagem adequada ao aluno.
+Os slides devem ser totalmente autossuficientes, sem depender do anexo.
 Saída final pronta para o Studio.
 """
+
 
 def prompt_flash(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    return contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn) + """
+    return contexto_studio_compacto(
+        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
+    ) + """
 Crie os FLASHCARDS finais.
 Gere de 6 a 8 flashcards úteis para esse aluno, com foco em conceito, aplicação, comparação e erro comum.
+Os flashcards devem ser totalmente autossuficientes, sem depender do anexo.
 Saída final pronta para o Studio.
 """
 
+
 def prompt_teste(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    return contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn) + """
+    return contexto_studio_compacto(
+        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
+    ) + """
 Crie o TESTE final.
 Gere 5 questões adaptadas ao aluno e ao formato de cobrança da escola, com gabarito comentado e erros comuns esperados.
+O teste deve ser totalmente autossuficiente, sem depender do anexo.
 Saída final pronta para o Studio.
 """
+
 
 def prompt_aula(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, selected, usa_fontes, modo_estudo_fn):
     parts = [
-        contexto_geral(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, modo_estudo_fn),
+        contexto_geral(
+            data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, modo_estudo_fn
+        ),
         "PACOTE DE AULA COMPLETA"
     ]
     if "Vídeo" in selected:
-        parts.append("[VIDEO OVERVIEW]\n- gerar o material final do vídeo")
+        parts.append("[VIDEO OVERVIEW]\n- gerar o material final do vídeo autossuficiente")
     if "Áudio (responsável)" in selected:
-        parts.append("[AUDIO OVERVIEW]\n- gerar o material final do áudio para o responsável")
+        parts.append("[AUDIO OVERVIEW]\n- gerar o material final do áudio autossuficiente para o responsável")
     if "Slides" in selected:
-        parts.append("[SLIDES]\n- gerar os slides finais")
+        parts.append("[SLIDES]\n- gerar os slides finais autossuficientes")
     if "Flashcards (máx 10)" in selected:
-        parts.append("[FLASHCARDS]\n- gerar os flashcards prontos")
+        parts.append("[FLASHCARDS]\n- gerar os flashcards prontos e autossuficientes")
     if "Teste" in selected:
-        parts.append("[TESTE]\n- gerar o teste pronto com gabarito")
+        parts.append("[TESTE]\n- gerar o teste pronto com gabarito e sem depender do anexo")
     parts.append("Fechar com sinais de compreensão e sugestão breve de retomada.")
     return "\n\n".join(parts)
+
 
 def prompt_cronograma(data, materia, area, conteudos, data_hoje, data_prova, alta, media, baixa):
     especialidade = get_subject_specialization(materia, area)
