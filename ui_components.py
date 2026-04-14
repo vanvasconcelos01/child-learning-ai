@@ -18,10 +18,7 @@ def inject_styles():
     }
     .small {color: #475569; font-size: 0.92rem;}
     h1, h2, h3 {color: #0f172a;}
-    hr {
-        margin-top: 0.5rem;
-        margin-bottom: 1rem;
-    }
+    hr {margin-top: 0.5rem; margin-bottom: 1rem;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -50,14 +47,14 @@ def checkbox_group(label, options, state_key, columns=3):
     st.session_state[state_key] = novos_selecionados
 
 def radio_group(label, options, state_key, horizontal=False):
-    valor_atual = st.session_state.get(state_key, options[0])
-    if valor_atual not in options:
+    valor_atual = st.session_state.get(state_key, options[0] if options else None)
+    if options and valor_atual not in options:
         valor_atual = options[0]
 
     st.radio(
         label,
         options,
-        index=options.index(valor_atual),
+        index=options.index(valor_atual) if options else 0,
         horizontal=horizontal,
         key=state_key
     )
