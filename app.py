@@ -22,15 +22,13 @@ from constants import (
     STEPS,
 )
 from state import init_state, migrate_legacy_keys
-from ui_components import inject_styles, checkbox_group, radio_group, slugify
+from ui_components import inject_styles, checkbox_group, slugify
 from profile_logic import (
     formatar_data_br,
     atualizar_caracteristicas_sugeridas,
     get_perfil_data,
     obter_cobranca,
     extrair_campos_cronograma,
-    save_named_profile,
-    load_named_profile,
     resumo_aluno_compacto,
     modo_estudo,
 )
@@ -43,6 +41,7 @@ from prompts import (
     prompt_aula,
     prompt_cronograma,
 )
+from storage import load_saved_profiles, save_saved_profiles
 
 st.set_page_config(page_title="EduAI Studio", page_icon="🧠", layout="wide")
 init_state()
@@ -55,8 +54,12 @@ st.session_state.setdefault("nav_message", "")
 st.session_state.setdefault("nav_message_type", "info")
 st.session_state.setdefault("mostrar_debug", False)
 
+# Carrega perfis persistidos uma vez
+if not st.session_state["saved_profiles"]:
+    st.session_state["saved_profiles"] = load_saved_profiles()
+
 # =====================================================
-# Persistência de campos de texto
+# Persistência de widgets
 # =====================================================
 
 PERSISTENT_TEXT_KEYS = [
@@ -104,6 +107,19 @@ PERSISTENT_BOOL_KEYS = [
     "usa_fontes",
 ]
 
+PERSISTENT_RADIO_KEYS = [
+    "atencao_sustentada",
+    "autonomia",
+    "canal_preferencial",
+    "tolerancia_frustracao",
+    "leitura_nivel",
+    "escrita_nivel",
+    "matematica_nivel",
+    "compreensao_oral",
+    "situacao_conteudo",
+    "prioridade_conteudo",
+]
+
 
 def _wk(storage_key: str) -> str:
     return f"_w_{storage_key}"
@@ -126,7 +142,13 @@ def sync_storage_to_widget(storage_key: str):
 
 
 def persist_all_widgets():
-    for k in PERSISTENT_TEXT_KEYS + PERSISTENT_SELECT_KEYS + PERSISTENT_DATE_KEYS + PERSISTENT_BOOL_KEYS:
+    for k in (
+        PERSISTENT_TEXT_KEYS
+        + PERSISTENT_SELECT_KEYS
+        + PERSISTENT_DATE_KEYS
+        + PERSISTENT_BOOL_KEYS
+        + PERSISTENT_RADIO_KEYS
+    ):
         wk = _wk(k)
         if wk in st.session_state:
             st.session_state[k] = st.session_state[wk]
@@ -199,6 +221,28 @@ def persistent_toggle(label: str, storage_key: str, **kwargs):
         **kwargs,
     )
 
+
+def persistent_radio(label: str, options, storage_key: str, horizontal=False):
+    default = options[0] if options else ""
+    init_widget_from_storage(storage_key, default)
+
+    valor_atual = st.session_state.get(_wk(storage_key), default)
+    if valor_atual not in options:
+        valor_atual = default
+        st.session_state[_wk(storage_key)] = default
+        st.session_state[storage_key] = default
+
+    def _sync():
+        sync_widget_to_storage(storage_key)
+
+    return st.radio(
+        label,
+        options,
+        index=options.index(valor_atual),
+        horizontal=horizontal,
+        key=_wk(storage_key),
+        on_change=_sync,
+    )
 
 # =====================================================
 # Helpers
@@ -286,12 +330,110 @@ def sync_all_checkbox_groups():
     sync_checkbox_group_keys("cobranca_escola", ESCOLA_COBRANCA_OPTIONS)
     sync_checkbox_group_keys(
         "selected_materials",
-        ["Vídeo", "Áudio (responsável)", "Slides", "Flashcards (máx 10)", "Teste"]
+        ["Vídeo", "Áudio (responsável)", "Slides", "Flashcards (máx 10)", "Teste"],
     )
 
-    for k in PERSISTENT_TEXT_KEYS + PERSISTENT_SELECT_KEYS + PERSISTENT_DATE_KEYS + PERSISTENT_BOOL_KEYS:
+    for k in (
+        PERSISTENT_TEXT_KEYS
+        + PERSISTENT_SELECT_KEYS
+        + PERSISTENT_DATE_KEYS
+        + PERSISTENT_BOOL_KEYS
+        + PERSISTENT_RADIO_KEYS
+    ):
         sync_storage_to_widget(k)
 
+
+def collect_profile_payload():
+    persist_all_widgets()
+    atualizar_caracteristicas_sugeridas()
+    return {
+        "nome": st.session_state["nome"],
+        "apelido": st.session_state["apelido"],
+        "idade": st.session_state["idade"],
+        "serie": st.session_state["serie"],
+        "escola": st.session_state["escola"],
+        "turno": st.session_state["turno"],
+        "responsavel": st.session_state["responsavel"],
+        "interesses": st.session_state["interesses"],
+        "interesses_outro": st.session_state["interesses_outro"],
+        "diagnosticos": st.session_state["diagnosticos"],
+        "outro_diagnostico": st.session_state["outro_diagnostico"],
+        "outras_caracteristicas": st.session_state["outras_caracteristicas"],
+        "caracteristicas_sugeridas": st.session_state["caracteristicas_sugeridas"],
+        "atencao_sustentada": st.session_state["atencao_sustentada"],
+        "autonomia": st.session_state["autonomia"],
+        "canal_preferencial": st.session_state["canal_preferencial"],
+        "tolerancia_frustracao": st.session_state["tolerancia_frustracao"],
+        "leitura_nivel": st.session_state["leitura_nivel"],
+        "escrita_nivel": st.session_state["escrita_nivel"],
+        "matematica_nivel": st.session_state["matematica_nivel"],
+        "compreensao_oral": st.session_state["compreensao_oral"],
+        "tipo_erro_mais_comum": st.session_state["tipo_erro_mais_comum"],
+        "tipo_erro_outro": st.session_state["tipo_erro_outro"],
+        "engajamento": st.session_state["engajamento"],
+        "engajamento_outro": st.session_state["engajamento_outro"],
+        "principal_dificuldade": st.session_state["principal_dificuldade"],
+        "dificuldade_outro": st.session_state["dificuldade_outro"],
+        "sinais_quando_trava": st.session_state["sinais_quando_trava"],
+        "trava_outro": st.session_state["trava_outro"],
+        "melhor_forma_retomar": st.session_state["melhor_forma_retomar"],
+        "retomada_outro": st.session_state["retomada_outro"],
+    }
+
+
+def apply_profile_payload(payload: dict):
+    for k, v in payload.items():
+        st.session_state[k] = v
+    sync_all_checkbox_groups()
+    atualizar_caracteristicas_sugeridas()
+
+
+def save_profile_to_disk(profile_name: str):
+    profiles = load_saved_profiles()
+    profiles[profile_name] = collect_profile_payload()
+    save_saved_profiles(profiles)
+    st.session_state["saved_profiles"] = profiles
+
+
+def load_profile_from_disk(profile_name: str):
+    profiles = load_saved_profiles()
+    payload = profiles.get(profile_name)
+    if payload:
+        apply_profile_payload(payload)
+        st.session_state["saved_profiles"] = profiles
+
+
+def apply_cronograma_to_config():
+    persist_all_widgets()
+    campos = extrair_campos_cronograma(st.session_state["cronograma_linha_do_dia"])
+
+    if st.session_state["cron_materia"].strip():
+        st.session_state["mat_did"] = st.session_state["cron_materia"].strip()
+
+    st.session_state["config_area_materia"] = st.session_state["cron_area_materia"]
+    st.session_state["config_hoje"] = st.session_state["cron_hoje"]
+    st.session_state["config_prova"] = st.session_state["cron_prova"]
+
+    st.session_state["conteudo_dia"] = (
+        campos["texto_colar"]
+        or campos["conteudo"]
+        or st.session_state["cronograma_linha_do_dia"].strip()
+    )
+
+    if campos["objetivo"]:
+        st.session_state["objetivo_dia"] = campos["objetivo"]
+
+    sync_storage_to_widget("mat_did")
+    sync_storage_to_widget("config_area_materia")
+    sync_storage_to_widget("config_hoje")
+    sync_storage_to_widget("config_prova")
+    sync_storage_to_widget("conteudo_dia")
+    sync_storage_to_widget("objetivo_dia")
+
+    set_msg(
+        "Matéria, conteúdo do dia, objetivo e datas foram enviados para Configuração.",
+        "success",
+    )
 
 # =====================================================
 # Sidebar
@@ -312,16 +454,15 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("## Perfis salvos")
 
-    saved = list(st.session_state["saved_profiles"].keys())
+    saved = list(load_saved_profiles().keys())
+    st.session_state["saved_profiles"] = load_saved_profiles()
 
     if not saved:
         st.caption("Nenhum perfil salvo.")
     else:
         for p in saved:
             if st.button(p, use_container_width=True, key=f"profile_{p}"):
-                load_named_profile(p)
-                sync_all_checkbox_groups()
-                atualizar_caracteristicas_sugeridas()
+                load_profile_from_disk(p)
                 set_msg(f"Perfil '{p}' carregado.", "success")
                 st.rerun()
 
@@ -420,7 +561,7 @@ if step == "Perfil":
             persist_all_widgets()
             nome = st.session_state["novo_nome_perfil"].strip()
             if nome:
-                save_named_profile(nome)
+                save_profile_to_disk(nome)
                 set_msg(f"Perfil '{nome}' salvo.", "success")
                 st.rerun()
 
@@ -433,14 +574,14 @@ if step == "Perfil":
 elif step == "Aprendizagem":
     st.subheader("Perfil de aprendizagem")
 
-    radio_group("Atenção sustentada", ATENCAO_OPTIONS, "atencao_sustentada", True)
-    radio_group("Autonomia", AUTONOMIA_OPTIONS, "autonomia", True)
-    radio_group("Canal preferencial", CANAL_OPTIONS, "canal_preferencial", True)
-    radio_group("Tolerância à frustração", FRUSTRACAO_OPTIONS, "tolerancia_frustracao", True)
-    radio_group("Leitura", NIVEL_OPTIONS, "leitura_nivel", True)
-    radio_group("Escrita", NIVEL_OPTIONS, "escrita_nivel", True)
-    radio_group("Matemática", NIVEL_OPTIONS, "matematica_nivel", True)
-    radio_group("Compreensão oral", ["Baixa", "Média", "Boa"], "compreensao_oral", True)
+    persistent_radio("Atenção sustentada", ATENCAO_OPTIONS, "atencao_sustentada", True)
+    persistent_radio("Autonomia", AUTONOMIA_OPTIONS, "autonomia", True)
+    persistent_radio("Canal preferencial", CANAL_OPTIONS, "canal_preferencial", True)
+    persistent_radio("Tolerância à frustração", FRUSTRACAO_OPTIONS, "tolerancia_frustracao", True)
+    persistent_radio("Leitura", NIVEL_OPTIONS, "leitura_nivel", True)
+    persistent_radio("Escrita", NIVEL_OPTIONS, "escrita_nivel", True)
+    persistent_radio("Matemática", NIVEL_OPTIONS, "matematica_nivel", True)
+    persistent_radio("Compreensão oral", ["Baixa", "Média", "Boa"], "compreensao_oral", True)
 
     st.markdown("### Erros e dificuldades")
 
@@ -479,6 +620,9 @@ elif step == "Cronograma":
     hoje = persistent_date_input("Hoje", "cron_hoje", default_value=datetime.date.today())
     prova = persistent_date_input("Prova", "cron_prova", default_value=datetime.date.today())
 
+    st.caption(f"Hoje: {formatar_data_br(hoje)}")
+    st.caption(f"Data da prova: {formatar_data_br(prova)}")
+
     persistent_text_area("Conteúdos da prova", "cron_conteudos", height=120)
 
     c1, c2, c3 = st.columns(3)
@@ -514,12 +658,7 @@ elif step == "Cronograma":
     persistent_text_area("Cole aqui a linha do dia", "cronograma_linha_do_dia", height=90)
 
     if st.button("Usar esta linha na Configuração"):
-        persist_all_widgets()
-        campos = extrair_campos_cronograma(st.session_state["cronograma_linha_do_dia"])
-        st.session_state["mat_did"] = st.session_state["cron_materia"]
-        st.session_state["config_area_materia"] = st.session_state["cron_area_materia"]
-        st.session_state["conteudo_dia"] = campos["texto_colar"] or campos["conteudo"]
-        st.session_state["objetivo_dia"] = campos["objetivo"]
+        apply_cronograma_to_config()
         goto_step("Configuração")
 
     footer_nav()
@@ -540,11 +679,25 @@ elif step == "Configuração":
     hoje = persistent_date_input("Hoje", "config_hoje", default_value=datetime.date.today())
     prova = persistent_date_input("Prova", "config_prova", default_value=datetime.date.today())
 
-    radio_group("Situação", SITUACAO_OPTIONS, "situacao_conteudo", True)
-    radio_group("Prioridade", PRIORIDADE_OPTIONS, "prioridade_conteudo", True)
+    st.caption(f"Hoje: {formatar_data_br(hoje)}")
+    st.caption(f"Data da prova: {formatar_data_br(prova)}")
+
+    persistent_radio("Situação", SITUACAO_OPTIONS, "situacao_conteudo", True)
+    persistent_radio("Prioridade", PRIORIDADE_OPTIONS, "prioridade_conteudo", True)
 
     persistent_toggle("Usar anexos apenas como embasamento", "usa_fontes")
 
+    st.markdown("### Como a escola cobra")
+    checkbox_group(
+        "Selecione os formatos mais comuns",
+        ESCOLA_COBRANCA_OPTIONS,
+        "cobranca_escola",
+        3
+    )
+    if "Outro" in st.session_state["cobranca_escola"]:
+        persistent_text_input("Outro tipo de cobrança", "cobranca_extra")
+
+    st.markdown("### Materiais")
     checkbox_group(
         "Materiais",
         ["Vídeo", "Áudio (responsável)", "Slides", "Flashcards (máx 10)", "Teste"],
