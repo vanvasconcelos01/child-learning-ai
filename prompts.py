@@ -29,8 +29,7 @@ def get_subject_specialization(materia: str, area: str = "") -> str:
     if area_norm == "idiomas":
         return (
             "Assuma postura de especialista em ensino de idiomas para aluno brasileiro. "
-            "Explique utilizando também o português do Brasil para apoiar a compreensão. "
-            "Mesmo em vídeo e slides, não deixe o material apenas no idioma estudado."
+            "Explique utilizando o português do Brasil como idioma principal de explicação."
         )
 
     if area_norm == "artes":
@@ -62,9 +61,7 @@ def get_subject_specialization(materia: str, area: str = "") -> str:
     if any(x in m for x in ["ingl", "english", "espanhol", "idioma", "língua estrangeira", "lingua estrangeira", "francês", "frances"]):
         return (
             "Assuma postura de especialista em ensino de idiomas para aluno brasileiro. "
-            "Explique utilizando também o português do Brasil para apoiar a compreensão. "
-            "Mesmo em vídeo e slides, não deixe o material apenas no idioma estudado; "
-            "use explicações, apoio e contextualização em português do Brasil."
+            "Explique utilizando o português do Brasil como idioma principal de explicação."
         )
 
     if "hist" in m:
@@ -148,9 +145,11 @@ def get_language_support_instruction(materia: str, area: str = "") -> str:
     ):
         return (
             "IMPORTANTE DE IDIOMA:\n"
-            "- usar o idioma estudado com apoio em português do Brasil\n"
-            "- explicar vocabulário, estruturas e exemplos em português do Brasil também\n"
-            "- vídeo e slides não devem ficar apenas no idioma da matéria"
+            "- usar o português do Brasil como idioma principal de explicação\n"
+            "- o idioma estrangeiro deve aparecer como objeto de estudo, vocabulário ou prática\n"
+            "- explicar regras, estruturas e exemplos principalmente em português do Brasil\n"
+            "- vídeo e slides não devem ficar predominantemente no idioma estrangeiro\n"
+            "- o aluno deve entender o conteúdo sem depender do anexo"
         )
     return ""
 
@@ -186,13 +185,16 @@ INTERESSES
 
 def contexto_geral(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, modo_estudo_fn):
     regras = (
-        "- usar as fontes anexadas como base principal\n"
-        "- não copiar literalmente\n"
-        "- não inventar páginas"
+        "- usar os anexos apenas como embasamento e referência de repertório\n"
+        "- o material final deve ser totalmente autossuficiente\n"
+        "- não depender de página, imagem, exercício, capítulo, figura ou trecho do livro\n"
+        "- não escrever comandos como 'observe a página', 'veja a imagem', 'responda com base no texto acima'\n"
+        "- se usar o anexo, transformar o conteúdo em explicações e exemplos próprios"
         if usa_fontes else
-        "- criar mesmo sem fontes anexadas\n"
-        "- usar nível compatível com a série\n"
-        "- não citar páginas"
+        "- criar mesmo sem anexos\n"
+        "- o material final deve ser totalmente autossuficiente\n"
+        "- não citar páginas nem depender de livro\n"
+        "- usar nível compatível com a série"
     )
 
     especialidade = get_subject_specialization(materia, area)
@@ -217,13 +219,18 @@ Forma de cobrança: {estilo or 'não informada'}
 IMPORTANTE
 {regras}
 - adaptar tudo ao perfil do aluno
-- criar exemplos inéditos
+- focar no conteúdo e no que costuma ser mais cobrado para a idade e série dentro do repertório dado
+- criar exemplos inéditos e completos
 - considerar o erro comum e a forma de retomada
 {idioma}
 """
 
 def contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    modo_fontes = "usar as fontes anexadas como base principal" if usa_fontes else "criar sem depender de fontes anexadas"
+    modo_fontes = (
+        "usar anexos apenas como embasamento; o material final deve ser autossuficiente"
+        if usa_fontes else
+        "criar sem depender de anexos; o material final deve ser autossuficiente"
+    )
     especialidade = get_subject_specialization(materia, area)
     idioma = get_language_support_instruction(materia, area)
 
@@ -250,6 +257,10 @@ REGRAS GERAIS
 - usar TODAS as informações acima para adaptar o material
 - considerar idade, série, diagnósticos, características sugeridas do diagnóstico, interesses, engajamento, dificuldade, erro comum e retomada
 - alinhar o material ao jeito que a escola cobra
+- o material precisa ser totalmente autossuficiente
+- não depender de páginas, imagens, capítulos ou instruções do livro
+- não escrever frases como 'observe a página', 'veja a atividade', 'como mostrado acima'
+- usar o anexo apenas como base de repertório, nunca como dependência
 - ser claro, útil e direto
 - não explicar como fazer o material
 - gerar o material final pronto para uso
