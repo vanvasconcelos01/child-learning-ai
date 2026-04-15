@@ -4,6 +4,7 @@ import datetime
 import streamlit as st
 from constants import PT_MONTHS, DIAG_CHARACTERISTICS
 
+
 def _coerce_date(d):
     if isinstance(d, datetime.datetime):
         return d.date()
@@ -17,13 +18,16 @@ def _coerce_date(d):
                 continue
     return datetime.date.today()
 
+
 def formatar_data_br(d):
     d = _coerce_date(d)
     return d.strftime("%d/%m/%Y")
 
+
 def formatar_data_extenso(d):
     d = _coerce_date(d)
     return f"{d.day} de {PT_MONTHS[d.month]} de {d.year}"
+
 
 def modo_estudo(dias, situacao):
     if dias <= 1:
@@ -33,6 +37,7 @@ def modo_estudo(dias, situacao):
     if situacao == "em_dificuldade":
         return "reforço estruturado"
     return "consolidação"
+
 
 def combine_characteristics(diags, outro=""):
     items, seen = [], set()
@@ -47,6 +52,7 @@ def combine_characteristics(diags, outro=""):
         items.append(outro.strip())
     return ", ".join(items)
 
+
 def juntar_multiselect_com_outro(lista_base, texto_outro):
     itens = list(lista_base) if lista_base else []
     usar_outro = "Outro" in itens
@@ -57,57 +63,62 @@ def juntar_multiselect_com_outro(lista_base, texto_outro):
 
     return ", ".join(itens) if itens else "não informado"
 
+
 def obter_cobranca():
     return juntar_multiselect_com_outro(
-        st.session_state["cobranca_escola"],
-        st.session_state["cobranca_extra"]
+        st.session_state.get("cobranca_escola", []),
+        st.session_state.get("cobranca_extra", "")
     )
+
 
 def obter_interesses():
     return juntar_multiselect_com_outro(
-        st.session_state["interesses"],
-        st.session_state["interesses_outro"]
+        st.session_state.get("interesses", []),
+        st.session_state.get("interesses_outro", "")
     )
+
 
 def obter_tipo_erro():
     return juntar_multiselect_com_outro(
-        st.session_state["tipo_erro_mais_comum"],
-        st.session_state["tipo_erro_outro"]
+        st.session_state.get("tipo_erro_mais_comum", []),
+        st.session_state.get("tipo_erro_outro", "")
     )
+
 
 def atualizar_caracteristicas_sugeridas():
     st.session_state["caracteristicas_sugeridas"] = combine_characteristics(
-        st.session_state["diagnosticos"],
+        st.session_state.get("diagnosticos", []),
         st.session_state.get("outro_diagnostico", "")
     )
 
+
 def perfil_aprendizagem_texto():
     engajamento = juntar_multiselect_com_outro(
-        st.session_state["engajamento"],
-        st.session_state["engajamento_outro"]
+        st.session_state.get("engajamento", []),
+        st.session_state.get("engajamento_outro", "")
     )
     dificuldade = juntar_multiselect_com_outro(
-        st.session_state["principal_dificuldade"],
-        st.session_state["dificuldade_outro"]
+        st.session_state.get("principal_dificuldade", []),
+        st.session_state.get("dificuldade_outro", "")
     )
     trava = juntar_multiselect_com_outro(
-        st.session_state["sinais_quando_trava"],
-        st.session_state["trava_outro"]
+        st.session_state.get("sinais_quando_trava", []),
+        st.session_state.get("trava_outro", "")
     )
     retomada = juntar_multiselect_com_outro(
-        st.session_state["melhor_forma_retomar"],
-        st.session_state["retomada_outro"]
+        st.session_state.get("melhor_forma_retomar", []),
+        st.session_state.get("retomada_outro", "")
     )
 
     return f"""
-- Atenção sustentada: {st.session_state['atencao_sustentada']}
-- Autonomia: {st.session_state['autonomia']}
-- Canal preferencial: {st.session_state['canal_preferencial']}
-- Tolerância à frustração: {st.session_state['tolerancia_frustracao']}
-- Leitura: {st.session_state['leitura_nivel']}
-- Escrita: {st.session_state['escrita_nivel']}
-- Matemática: {st.session_state['matematica_nivel']}
-- Compreensão oral: {st.session_state['compreensao_oral']}
+- Atenção sustentada: {st.session_state.get('atencao_sustentada', 'Média')}
+- Autonomia: {st.session_state.get('autonomia', 'Precisa de alguma mediação')}
+- Canal preferencial: {st.session_state.get('canal_preferencial', 'Visual')}
+- Tolerância à frustração: {st.session_state.get('tolerancia_frustracao', 'Média')}
+- Leitura: {st.session_state.get('leitura_nivel', 'Adequado')}
+- Escrita: {st.session_state.get('escrita_nivel', 'Adequado')}
+- Matemática: {st.session_state.get('matematica_nivel', 'Adequado')}
+- Compreensão oral: {st.session_state.get('compreensao_oral', 'Média')}
 - O que mais engaja: {engajamento}
 - Principal dificuldade observada: {dificuldade}
 - Tipo de erro mais comum: {obter_tipo_erro()}
@@ -115,29 +126,31 @@ def perfil_aprendizagem_texto():
 - Melhor forma de retomar: {retomada}
 """.strip()
 
+
 def get_perfil_data(data_prova=""):
-    diagnosticos = list(st.session_state["diagnosticos"])
-    if st.session_state["outro_diagnostico"].strip():
-        diagnosticos.append(st.session_state["outro_diagnostico"].strip())
+    diagnosticos = list(st.session_state.get("diagnosticos", []))
+    outro = st.session_state.get("outro_diagnostico", "").strip()
+    if outro:
+        diagnosticos.append(outro)
 
     atualizar_caracteristicas_sugeridas()
 
-    outras = st.session_state["outras_caracteristicas"].strip()
-    sugeridas = st.session_state["caracteristicas_sugeridas"].strip()
+    outras = st.session_state.get("outras_caracteristicas", "").strip()
+    sugeridas = st.session_state.get("caracteristicas_sugeridas", "").strip()
 
     bloco_caracteristicas = sugeridas
     if outras:
         bloco_caracteristicas = f"{sugeridas}; {outras}" if sugeridas else outras
 
     return {
-        "nome": st.session_state["nome"],
-        "apelido": st.session_state["apelido"],
-        "idade": st.session_state["idade"],
-        "serie": st.session_state["serie"],
-        "escola": st.session_state["escola"],
-        "turno": st.session_state["turno"],
+        "nome": st.session_state.get("nome", ""),
+        "apelido": st.session_state.get("apelido", ""),
+        "idade": st.session_state.get("idade", ""),
+        "serie": st.session_state.get("serie", ""),
+        "escola": st.session_state.get("escola", ""),
+        "turno": st.session_state.get("turno", ""),
         "interesses": obter_interesses(),
-        "responsavel": st.session_state["responsavel"],
+        "responsavel": st.session_state.get("responsavel", ""),
         "diagnosticos": diagnosticos,
         "outras_caracteristicas": bloco_caracteristicas,
         "caracteristicas_sugeridas": sugeridas,
@@ -145,57 +158,59 @@ def get_perfil_data(data_prova=""):
         "data_prova": data_prova,
     }
 
+
 def exportar_perfil_json():
     data = get_perfil_data()
     return json.dumps(data, ensure_ascii=False, indent=2)
+
 
 def resumo_aluno_compacto(data):
     diags = ", ".join(data["diagnosticos"]) if data["diagnosticos"] else "nenhum"
 
     engajamento = juntar_multiselect_com_outro(
-        st.session_state["engajamento"],
-        st.session_state["engajamento_outro"]
+        st.session_state.get("engajamento", []),
+        st.session_state.get("engajamento_outro", "")
     )
     dificuldade = juntar_multiselect_com_outro(
-        st.session_state["principal_dificuldade"],
-        st.session_state["dificuldade_outro"]
+        st.session_state.get("principal_dificuldade", []),
+        st.session_state.get("dificuldade_outro", "")
     )
     trava = juntar_multiselect_com_outro(
-        st.session_state["sinais_quando_trava"],
-        st.session_state["trava_outro"]
+        st.session_state.get("sinais_quando_trava", []),
+        st.session_state.get("trava_outro", "")
     )
     retomada = juntar_multiselect_com_outro(
-        st.session_state["melhor_forma_retomar"],
-        st.session_state["retomada_outro"]
+        st.session_state.get("melhor_forma_retomar", []),
+        st.session_state.get("retomada_outro", "")
     )
 
     return f"""ALUNO
-- Nome: {data['nome'] or 'não informado'}
-- Apelido: {data['apelido'] or 'não informado'}
-- Idade: {data['idade'] or 'não informado'}
-- Série: {data['serie'] or 'não informada'}
-- Escola: {data['escola'] or 'não informada'}
-- Turno: {data['turno'] or 'não informado'}
-- Responsável: {data['responsavel'] or 'não informado'}
+- Nome: {data.get('nome', '') or 'não informado'}
+- Apelido: {data.get('apelido', '') or 'não informado'}
+- Idade: {data.get('idade', '') or 'não informado'}
+- Série: {data.get('serie', '') or 'não informada'}
+- Escola: {data.get('escola', '') or 'não informada'}
+- Turno: {data.get('turno', '') or 'não informado'}
+- Responsável: {data.get('responsavel', '') or 'não informado'}
 
 DIAGNÓSTICOS
 - {diags}
 
 INTERESSES
-- {data['interesses'] or 'não informado'}
+- {data.get('interesses', '') or 'não informado'}
 
 CARACTERÍSTICAS SUGERIDAS DO DIAGNÓSTICO
 - {data.get('caracteristicas_sugeridas', '') or 'não informado'}
 
 PERFIL DE APRENDIZAGEM
-- Atenção sustentada: {st.session_state['atencao_sustentada']}
-- Autonomia: {st.session_state['autonomia']}
-- Canal preferencial: {st.session_state['canal_preferencial']}
-- Tolerância à frustração: {st.session_state['tolerancia_frustracao']}
-- Leitura: {st.session_state['leitura_nivel']}
-- Escrita: {st.session_state['escrita_nivel']}
-- Matemática: {st.session_state['matematica_nivel']}
-- Compreensão oral: {st.session_state['compreensao_oral']}
+- Atenção sustentada: {st.session_state.get('atencao_sustentada', 'Média')}
+- Autonomia: {st.session_state.get('autonomia', 'Precisa de alguma mediação')}
+- Canal preferencial: {st.session_state.get('canal_preferencial', 'Visual')}
+- Tolerância à frustração: {st.session_state.get('tolerancia_frustracao', 'Média')}
+- Leitura: {st.session_state.get('leitura_nivel', 'Adequado')}
+- Escrita: {st.session_state.get('escrita_nivel', 'Adequado')}
+- Matemática: {st.session_state.get('matematica_nivel', 'Adequado')}
+- Compreensão oral: {st.session_state.get('compreensao_oral', 'Média')}
 - O que mais engaja: {engajamento}
 - Principal dificuldade: {dificuldade}
 - Tipo de erro mais comum: {obter_tipo_erro()}
@@ -203,8 +218,9 @@ PERFIL DE APRENDIZAGEM
 - Melhor forma de retomar: {retomada}
 
 OUTRAS CARACTERÍSTICAS
-- {st.session_state['outras_caracteristicas'] or 'não informado'}
+- {st.session_state.get('outras_caracteristicas', '') or 'não informado'}
 """
+
 
 def extrair_campos_cronograma(linha):
     resultado = {
@@ -229,3 +245,53 @@ def extrair_campos_cronograma(linha):
             resultado[chave] = match.group(1).strip()
 
     return resultado
+
+
+def get_profile_storage_payload():
+    return {
+        "nome": st.session_state.get("nome", ""),
+        "apelido": st.session_state.get("apelido", ""),
+        "idade": st.session_state.get("idade", ""),
+        "serie": st.session_state.get("serie", ""),
+        "escola": st.session_state.get("escola", ""),
+        "turno": st.session_state.get("turno", ""),
+        "interesses": st.session_state.get("interesses", []),
+        "interesses_outro": st.session_state.get("interesses_outro", ""),
+        "responsavel": st.session_state.get("responsavel", ""),
+        "diagnosticos": st.session_state.get("diagnosticos", []),
+        "outro_diagnostico": st.session_state.get("outro_diagnostico", ""),
+        "outras_caracteristicas": st.session_state.get("outras_caracteristicas", ""),
+        "caracteristicas_sugeridas": st.session_state.get("caracteristicas_sugeridas", ""),
+        "atencao_sustentada": st.session_state.get("atencao_sustentada", "Média"),
+        "autonomia": st.session_state.get("autonomia", "Precisa de alguma mediação"),
+        "canal_preferencial": st.session_state.get("canal_preferencial", "Visual"),
+        "tolerancia_frustracao": st.session_state.get("tolerancia_frustracao", "Média"),
+        "leitura_nivel": st.session_state.get("leitura_nivel", "Adequado"),
+        "escrita_nivel": st.session_state.get("escrita_nivel", "Adequado"),
+        "matematica_nivel": st.session_state.get("matematica_nivel", "Adequado"),
+        "compreensao_oral": st.session_state.get("compreensao_oral", "Média"),
+        "tipo_erro_mais_comum": st.session_state.get("tipo_erro_mais_comum", []),
+        "tipo_erro_outro": st.session_state.get("tipo_erro_outro", ""),
+        "engajamento": st.session_state.get("engajamento", []),
+        "engajamento_outro": st.session_state.get("engajamento_outro", ""),
+        "principal_dificuldade": st.session_state.get("principal_dificuldade", []),
+        "dificuldade_outro": st.session_state.get("dificuldade_outro", ""),
+        "sinais_quando_trava": st.session_state.get("sinais_quando_trava", []),
+        "trava_outro": st.session_state.get("trava_outro", ""),
+        "melhor_forma_retomar": st.session_state.get("melhor_forma_retomar", []),
+        "retomada_outro": st.session_state.get("retomada_outro", ""),
+    }
+
+
+def save_named_profile(profile_label):
+    if "saved_profiles" not in st.session_state:
+        st.session_state["saved_profiles"] = {}
+    st.session_state["saved_profiles"][profile_label] = get_profile_storage_payload()
+
+
+def load_named_profile(profile_label):
+    if "saved_profiles" not in st.session_state:
+        return
+    payload = st.session_state["saved_profiles"].get(profile_label, {})
+    for k, v in payload.items():
+        st.session_state[k] = v
