@@ -22,7 +22,7 @@ from constants import (
     STEPS,
 )
 from state import init_state, migrate_legacy_keys
-from ui_components import inject_styles, checkbox_group
+from ui_components import inject_styles, checkbox_group, slugify
 from profile_logic import (
     formatar_data_br,
     atualizar_caracteristicas_sugeridas,
@@ -43,14 +43,15 @@ from prompts import (
 )
 from storage import load_saved_profiles, save_saved_profiles
 
-st.set_page_config(page_title="EduAI Studio", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="EduAI Studio v8 Clean", page_icon="🧠", layout="wide")
 init_state()
 migrate_legacy_keys()
 inject_styles()
 
-# -----------------------------------------------------
+# =====================================================
 # Estado base
-# -----------------------------------------------------
+# =====================================================
+
 st.session_state.setdefault("saved_profiles", {})
 st.session_state.setdefault("current_step", "Perfil")
 st.session_state.setdefault("nav_message", "")
@@ -61,9 +62,68 @@ st.session_state.setdefault("perfil_sidebar_select", "")
 if not st.session_state["saved_profiles"]:
     st.session_state["saved_profiles"] = load_saved_profiles()
 
-# -----------------------------------------------------
+# =====================================================
 # Helpers de persistência UI -> storage
-# -----------------------------------------------------
+# =====================================================
+
+TEXT_KEYS = [
+    "nome",
+    "apelido",
+    "idade",
+    "serie",
+    "escola",
+    "turno",
+    "responsavel",
+    "interesses_outro",
+    "outro_diagnostico",
+    "outras_caracteristicas",
+    "novo_nome_perfil",
+    "tipo_erro_outro",
+    "engajamento_outro",
+    "dificuldade_outro",
+    "trava_outro",
+    "retomada_outro",
+    "cron_materia",
+    "cron_conteudos",
+    "cron_alta",
+    "cron_media",
+    "cron_baixa",
+    "cronograma_linha_do_dia",
+    "mat_did",
+    "conteudo_dia",
+    "objetivo_dia",
+    "cobranca_extra",
+]
+
+SELECT_KEYS = [
+    "cron_area_materia",
+    "config_area_materia",
+]
+
+DATE_KEYS = [
+    "cron_hoje",
+    "cron_prova",
+    "config_hoje",
+    "config_prova",
+]
+
+RADIO_KEYS = [
+    "atencao_sustentada",
+    "autonomia",
+    "canal_preferencial",
+    "tolerancia_frustracao",
+    "leitura_nivel",
+    "escrita_nivel",
+    "matematica_nivel",
+    "compreensao_oral",
+    "situacao_conteudo",
+    "prioridade_conteudo",
+]
+
+TOGGLE_KEYS = [
+    "usa_fontes",
+]
+
 
 def ui_key(name: str) -> str:
     return f"ui_{name}"
@@ -81,23 +141,8 @@ def sync_from_ui(name: str):
 
 
 def hydrate_ui_from_storage():
-    keys = [
-        # perfil
-        "nome", "apelido", "idade", "serie", "escola", "turno", "responsavel",
-        "interesses_outro", "outro_diagnostico", "outras_caracteristicas",
-        "novo_nome_perfil",
-        # aprendizagem
-        "tipo_erro_outro", "engajamento_outro", "dificuldade_outro", "trava_outro", "retomada_outro",
-        "atencao_sustentada", "autonomia", "canal_preferencial", "tolerancia_frustracao",
-        "leitura_nivel", "escrita_nivel", "matematica_nivel", "compreensao_oral",
-        # cronograma/config
-        "cron_materia", "cron_area_materia", "cron_conteudos", "cron_alta", "cron_media", "cron_baixa",
-        "cron_hoje", "cron_prova", "cronograma_linha_do_dia",
-        "mat_did", "config_area_materia", "conteudo_dia", "objetivo_dia",
-        "config_hoje", "config_prova", "situacao_conteudo", "prioridade_conteudo",
-        "cobranca_extra", "usa_fontes",
-    ]
-    for k in keys:
+    all_keys = TEXT_KEYS + SELECT_KEYS + DATE_KEYS + RADIO_KEYS + TOGGLE_KEYS
+    for k in all_keys:
         if k in st.session_state:
             st.session_state[ui_key(k)] = st.session_state[k]
 
@@ -129,9 +174,6 @@ def selectbox_persist(label, name, options, default=None, **kwargs):
         default = options[0] if options else ""
     ensure_ui_value(name, default)
 
-    def _sync():
-        sync_from_ui(name)
-
     current = st.session_state[ui_key(name)]
     if current not in options and options:
         st.session_state[ui_key(name)] = default
@@ -141,7 +183,8 @@ def selectbox_persist(label, name, options, default=None, **kwargs):
         label,
         options,
         key=ui_key(name),
-        on_change=_sync,
+        on_change=sync_from_ui,
+        args=(name,),
         **kwargs,
     )
 
@@ -150,9 +193,6 @@ def radio_persist(label, name, options, default=None, horizontal=False):
     if default is None:
         default = options[0] if options else ""
     ensure_ui_value(name, default)
-
-    def _sync():
-        sync_from_ui(name)
 
     current = st.session_state[ui_key(name)]
     if current not in options and options:
@@ -163,7 +203,8 @@ def radio_persist(label, name, options, default=None, horizontal=False):
         label,
         options,
         key=ui_key(name),
-        on_change=_sync,
+        on_change=sync_from_ui,
+        args=(name,),
         horizontal=horizontal,
     )
 
@@ -172,34 +213,28 @@ def date_input_persist(label, name, default=None, **kwargs):
     if default is None:
         default = datetime.date.today()
     ensure_ui_value(name, default)
-
-    def _sync():
-        sync_from_ui(name)
-
     return st.date_input(
         label,
         key=ui_key(name),
-        on_change=_sync,
+        on_change=sync_from_ui,
+        args=(name,),
         **kwargs,
     )
 
 
 def toggle_persist(label, name, default=False, **kwargs):
     ensure_ui_value(name, default)
-
-    def _sync():
-        sync_from_ui(name)
-
     return st.toggle(
         label,
         key=ui_key(name),
-        on_change=_sync,
+        on_change=sync_from_ui,
+        args=(name,),
         **kwargs,
     )
 
-# -----------------------------------------------------
+# =====================================================
 # Helpers gerais
-# -----------------------------------------------------
+# =====================================================
 
 def set_msg(msg, kind="info"):
     st.session_state["nav_message"] = msg
@@ -256,6 +291,28 @@ def show_prompt_block(title: str, text: str, key_suffix: str):
         )
 
 
+def sync_checkbox_group_keys(state_key, options):
+    selected = set(st.session_state.get(state_key, []))
+    for option in options:
+        widget_key = f"{state_key}_{slugify(option)}"
+        st.session_state[widget_key] = option in selected
+
+
+def sync_all_checkbox_groups():
+    sync_checkbox_group_keys("interesses", INTERESSES_OPTIONS)
+    sync_checkbox_group_keys("diagnosticos", DIAG_OPTIONS)
+    sync_checkbox_group_keys("tipo_erro_mais_comum", ERRO_OPTIONS)
+    sync_checkbox_group_keys("engajamento", ENGAJAMENTO_OPTIONS)
+    sync_checkbox_group_keys("principal_dificuldade", DIFICULDADE_OPTIONS)
+    sync_checkbox_group_keys("sinais_quando_trava", TRAVA_OPTIONS)
+    sync_checkbox_group_keys("melhor_forma_retomar", RETOMADA_OPTIONS)
+    sync_checkbox_group_keys("cobranca_escola", ESCOLA_COBRANCA_OPTIONS)
+    sync_checkbox_group_keys(
+        "selected_materials",
+        ["Vídeo", "Áudio (responsável)", "Slides", "Flashcards (máx 10)", "Teste"],
+    )
+
+
 def collect_profile_payload():
     atualizar_caracteristicas_sugeridas()
     return {
@@ -297,6 +354,7 @@ def apply_profile_payload(payload: dict):
     for k, v in payload.items():
         st.session_state[k] = v
     hydrate_ui_from_storage()
+    sync_all_checkbox_groups()
     atualizar_caracteristicas_sugeridas()
 
 
@@ -342,17 +400,19 @@ def apply_cronograma_to_config():
     if campos["objetivo"]:
         st.session_state["objetivo_dia"] = campos["objetivo"]
 
-    hydrate_ui_from_storage()
+    # hidrata apenas os campos da tela de configuração, que ainda não foram criados nesta execução
+    for k in ["mat_did", "config_area_materia", "config_hoje", "config_prova", "conteudo_dia", "objetivo_dia"]:
+        st.session_state[ui_key(k)] = st.session_state[k]
 
     set_msg(
         "Matéria, conteúdo do dia, objetivo e datas foram enviados para Configuração.",
         "success",
     )
 
-# -----------------------------------------------------
-# Inicializa UI shadow keys
-# -----------------------------------------------------
+
+# inicializa shadow keys
 hydrate_ui_from_storage()
+sync_all_checkbox_groups()
 
 # =====================================================
 # Sidebar
@@ -413,8 +473,8 @@ with st.sidebar:
 # Header
 # =====================================================
 
-st.title("🧠 EduAI Studio")
-st.caption("Materiais personalizados para estudo com prompts inteligentes.")
+st.title("🧠 EduAI Studio v8 Clean")
+st.caption("Fluxo estável, prompts curtos e perfis persistentes.")
 
 if st.session_state["nav_message"]:
     kind = st.session_state["nav_message_type"]
