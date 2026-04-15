@@ -39,7 +39,6 @@ def checkbox_group(label, options, state_key, columns=3):
 
     selecionados_atuais = set(st.session_state[state_key])
 
-    # garante que os widgets individuais reflitam o estado salvo
     for option in options:
         widget_key = f"{state_key}_{slugify(option)}"
         if widget_key not in st.session_state:
@@ -58,3 +57,16 @@ def checkbox_group(label, options, state_key, columns=3):
             novos_selecionados.append(option)
 
     st.session_state[state_key] = novos_selecionados
+
+
+def radio_group(label, options, state_key, horizontal=False):
+    if state_key not in st.session_state or st.session_state[state_key] not in options:
+        st.session_state[state_key] = options[0]
+
+    st.radio(
+        label,
+        options,
+        index=options.index(st.session_state[state_key]),
+        key=state_key,
+        horizontal=horizontal,
+    )
