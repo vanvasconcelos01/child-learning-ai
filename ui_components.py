@@ -1,6 +1,7 @@
 import re
 import streamlit as st
 
+
 def inject_styles():
     st.markdown("""
     <style>
@@ -18,25 +19,37 @@ def inject_styles():
     }
     .small {color: #475569; font-size: 0.92rem;}
     h1, h2, h3 {color: #0f172a;}
-    hr {margin-top: 0.5rem; margin-bottom: 1rem;}
+    hr {
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+    }
     </style>
     """, unsafe_allow_html=True)
+
 
 def slugify(texto: str) -> str:
     return re.sub(r"[^a-zA-Z0-9]+", "_", texto.strip().lower())
 
+
 def checkbox_group(label, options, state_key, columns=3):
     st.markdown(f"**{label}**")
-    selected_set = set(st.session_state.get(state_key, []))
+
+    if state_key not in st.session_state or not isinstance(st.session_state[state_key], list):
+        st.session_state[state_key] = []
+
+    selecionados_atuais = set(st.session_state[state_key])
+
+    # garante que os widgets individuais reflitam o estado salvo
+    for option in options:
+        widget_key = f"{state_key}_{slugify(option)}"
+        if widget_key not in st.session_state:
+            st.session_state[widget_key] = option in selecionados_atuais
+
     cols = st.columns(columns)
     novos_selecionados = []
 
     for i, option in enumerate(options):
         widget_key = f"{state_key}_{slugify(option)}"
-        default_value = option in selected_set
-
-        if widget_key not in st.session_state or not isinstance(st.session_state.get(widget_key), bool):
-            st.session_state[widget_key] = default_value
 
         with cols[i % columns]:
             marcado = st.checkbox(option, key=widget_key)
@@ -45,16 +58,3 @@ def checkbox_group(label, options, state_key, columns=3):
             novos_selecionados.append(option)
 
     st.session_state[state_key] = novos_selecionados
-
-def radio_group(label, options, state_key, horizontal=False):
-    valor_atual = st.session_state.get(state_key, options[0] if options else None)
-    if options and valor_atual not in options:
-        valor_atual = options[0]
-
-    st.radio(
-        label,
-        options,
-        index=options.index(valor_atual) if options else 0,
-        horizontal=horizontal,
-        key=state_key
-    )
