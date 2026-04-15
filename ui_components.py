@@ -5,10 +5,15 @@ import streamlit as st
 def inject_styles():
     st.markdown("""
     <style>
-    .block-container {padding-top: 1rem; padding-bottom: 2rem;}
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+    }
+
     [data-testid="stAppViewContainer"] {
         background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
     }
+
     .card {
         padding: 16px 18px;
         border-radius: 18px;
@@ -17,8 +22,16 @@ def inject_styles():
         box-shadow: 0 6px 24px rgba(15, 23, 42, 0.05);
         margin-bottom: 12px;
     }
-    .small {color: #475569; font-size: 0.92rem;}
-    h1, h2, h3 {color: #0f172a;}
+
+    .small {
+        color: #475569;
+        font-size: 0.92rem;
+    }
+
+    h1, h2, h3 {
+        color: #0f172a;
+    }
+
     hr {
         margin-top: 0.5rem;
         margin-bottom: 1rem;
@@ -37,21 +50,22 @@ def checkbox_group(label, options, state_key, columns=3):
     if state_key not in st.session_state or not isinstance(st.session_state[state_key], list):
         st.session_state[state_key] = []
 
-    selecionados_atuais = set(st.session_state[state_key])
-
-    for option in options:
-        widget_key = f"{state_key}_{slugify(option)}"
-        if widget_key not in st.session_state:
-            st.session_state[widget_key] = option in selecionados_atuais
-
+    selecionados = set(st.session_state[state_key])
     cols = st.columns(columns)
     novos_selecionados = []
 
     for i, option in enumerate(options):
         widget_key = f"{state_key}_{slugify(option)}"
 
+        if widget_key not in st.session_state:
+            st.session_state[widget_key] = option in selecionados
+
         with cols[i % columns]:
-            marcado = st.checkbox(option, key=widget_key)
+            marcado = st.checkbox(
+                label=option,
+                value=st.session_state[widget_key],
+                key=widget_key
+            )
 
         if marcado:
             novos_selecionados.append(option)
@@ -64,8 +78,8 @@ def radio_group(label, options, state_key, horizontal=False):
         st.session_state[state_key] = options[0]
 
     st.radio(
-        label,
-        options,
+        label=label,
+        options=options,
         index=options.index(st.session_state[state_key]),
         key=state_key,
         horizontal=horizontal,
