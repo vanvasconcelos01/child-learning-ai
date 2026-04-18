@@ -44,11 +44,18 @@ def checkbox_group(label, options, state_key, columns=3):
     for i, option in enumerate(options):
         widget_key = f"{state_key}_{slugify(option)}"
 
-        if widget_key not in st.session_state:
-            st.session_state[widget_key] = option in selecionados
+        # força sempre um valor booleano
+        valor_atual = st.session_state.get(widget_key, option in selecionados)
+        if not isinstance(valor_atual, bool):
+            valor_atual = option in selecionados
+            st.session_state[widget_key] = valor_atual
 
         with cols[i % columns]:
-            marcado = st.checkbox(option, key=widget_key)
+            marcado = st.checkbox(
+                label=option,
+                value=valor_atual,
+                key=widget_key
+            )
 
         if marcado:
             novos_selecionados.append(option)
