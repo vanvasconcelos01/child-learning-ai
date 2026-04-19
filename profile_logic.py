@@ -112,7 +112,7 @@ def perfil_aprendizagem_texto():
 
     return f"""
 - Atenção sustentada: {st.session_state.get('atencao_sustentada', 'Média')}
-- Autonomia: {st.session_state.get('autonomia', 'Precisa de alguma mediação')}
+- Autonomia: {st.session_state.get('autonomia', 'Alguma mediação')}
 - Canal preferencial: {st.session_state.get('canal_preferencial', 'Visual')}
 - Tolerância à frustração: {st.session_state.get('tolerancia_frustracao', 'Média')}
 - Leitura: {st.session_state.get('leitura_nivel', 'Adequado')}
@@ -204,7 +204,7 @@ CARACTERÍSTICAS SUGERIDAS DO DIAGNÓSTICO
 
 PERFIL DE APRENDIZAGEM
 - Atenção sustentada: {st.session_state.get('atencao_sustentada', 'Média')}
-- Autonomia: {st.session_state.get('autonomia', 'Precisa de alguma mediação')}
+- Autonomia: {st.session_state.get('autonomia', 'Alguma mediação')}
 - Canal preferencial: {st.session_state.get('canal_preferencial', 'Visual')}
 - Tolerância à frustração: {st.session_state.get('tolerancia_frustracao', 'Média')}
 - Leitura: {st.session_state.get('leitura_nivel', 'Adequado')}
@@ -245,53 +245,3 @@ def extrair_campos_cronograma(linha):
             resultado[chave] = match.group(1).strip()
 
     return resultado
-
-
-def get_profile_storage_payload():
-    return {
-        "nome": st.session_state.get("nome", ""),
-        "apelido": st.session_state.get("apelido", ""),
-        "idade": st.session_state.get("idade", ""),
-        "serie": st.session_state.get("serie", ""),
-        "escola": st.session_state.get("escola", ""),
-        "turno": st.session_state.get("turno", ""),
-        "interesses": st.session_state.get("interesses", []),
-        "interesses_outro": st.session_state.get("interesses_outro", ""),
-        "responsavel": st.session_state.get("responsavel", ""),
-        "diagnosticos": st.session_state.get("diagnosticos", []),
-        "outro_diagnostico": st.session_state.get("outro_diagnostico", ""),
-        "outras_caracteristicas": st.session_state.get("outras_caracteristicas", ""),
-        "caracteristicas_sugeridas": st.session_state.get("caracteristicas_sugeridas", ""),
-        "atencao_sustentada": st.session_state.get("atencao_sustentada", "Média"),
-        "autonomia": st.session_state.get("autonomia", "Precisa de alguma mediação"),
-        "canal_preferencial": st.session_state.get("canal_preferencial", "Visual"),
-        "tolerancia_frustracao": st.session_state.get("tolerancia_frustracao", "Média"),
-        "leitura_nivel": st.session_state.get("leitura_nivel", "Adequado"),
-        "escrita_nivel": st.session_state.get("escrita_nivel", "Adequado"),
-        "matematica_nivel": st.session_state.get("matematica_nivel", "Adequado"),
-        "compreensao_oral": st.session_state.get("compreensao_oral", "Média"),
-        "tipo_erro_mais_comum": st.session_state.get("tipo_erro_mais_comum", []),
-        "tipo_erro_outro": st.session_state.get("tipo_erro_outro", ""),
-        "engajamento": st.session_state.get("engajamento", []),
-        "engajamento_outro": st.session_state.get("engajamento_outro", ""),
-        "principal_dificuldade": st.session_state.get("principal_dificuldade", []),
-        "dificuldade_outro": st.session_state.get("dificuldade_outro", ""),
-        "sinais_quando_trava": st.session_state.get("sinais_quando_trava", []),
-        "trava_outro": st.session_state.get("trava_outro", ""),
-        "melhor_forma_retomar": st.session_state.get("melhor_forma_retomar", []),
-        "retomada_outro": st.session_state.get("retomada_outro", ""),
-    }
-
-
-def save_named_profile(profile_label):
-    if "saved_profiles" not in st.session_state:
-        st.session_state["saved_profiles"] = {}
-    st.session_state["saved_profiles"][profile_label] = get_profile_storage_payload()
-
-
-def load_named_profile(profile_label):
-    if "saved_profiles" not in st.session_state:
-        return
-    payload = st.session_state["saved_profiles"].get(profile_label, {})
-    for k, v in payload.items():
-        st.session_state[k] = v
