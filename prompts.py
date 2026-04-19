@@ -14,8 +14,6 @@ def get_subject_specialization(materia: str, area: str = "") -> str:
         return "Especialista em ensino de idiomas para aluno brasileiro, explicando principalmente em português do Brasil."
     if area_norm == "artes":
         return "Especialista em Artes, expressão, leitura de imagem e contexto cultural."
-    if area_norm == "tecnologia":
-        return "Especialista em tecnologia educacional, lógica, uso prático e explicação passo a passo."
 
     if any(x in m for x in ["portugu", "reda", "gram", "liter", "produção textual", "producao textual"]):
         return "Especialista em Língua Portuguesa, leitura, interpretação, gramática contextualizada e produção textual."
@@ -29,22 +27,8 @@ def get_subject_specialization(materia: str, area: str = "") -> str:
         return "Especialista em Geografia, espaço geográfico, território, paisagem, mapas e gráficos."
     if "ciên" in m or "cien" in m:
         return "Especialista em Ciências, observação, experimentação, corpo humano, meio ambiente, matéria e energia."
-    if "biolog" in m:
-        return "Especialista em Biologia, seres vivos, ecologia, genética e relações entre estrutura e função."
-    if "fís" in m or "fis" in m:
-        return "Especialista em Física, fenômenos, movimento, força, energia e interpretação de situações-problema."
-    if "quím" in m or "quim" in m:
-        return "Especialista em Química, substâncias, misturas, transformações da matéria e reações químicas."
     if "arte" in m:
         return "Especialista em Artes, leitura de imagem, expressão artística e elementos visuais."
-    if "filos" in m:
-        return "Especialista em Filosofia, pensamento crítico, conceitos centrais e argumentação."
-    if "sociolog" in m:
-        return "Especialista em Sociologia, sociedade, cultura, cidadania e leitura crítica do cotidiano."
-    if "relig" in m:
-        return "Especialista em Ensino Religioso, valores, diversidade, convivência e respeito."
-    if any(x in m for x in ["inform", "tecnolog", "comput", "program", "robótica", "robotica"]):
-        return "Especialista em tecnologia educacional e informática, lógica e resolução passo a passo."
 
     return "Especialista pedagógico na matéria estudada, adaptando linguagem e dificuldade à idade e ao perfil do aluno."
 
@@ -65,104 +49,97 @@ def get_language_support_instruction(materia: str, area: str = "") -> str:
     return ""
 
 
-def build_base_prompt(data):
-    diags = ", ".join(data["diagnosticos"]) if data["diagnosticos"] else "Nenhum"
-    return f"""PERFIL DO ALUNO
-Aluno: {data['nome']} ({data['apelido']})
-Idade: {data['idade']}
-Série: {data['serie']}
-Escola: {data['escola']}
-Turno: {data['turno']}
-Responsável: {data['responsavel']}
-
-Diagnósticos: {diags}
-Características sugeridas: {data.get('caracteristicas_sugeridas', 'não informado') or 'não informado'}
-Perfil de aprendizagem:
-{data['perfil_aprendizagem']}
-Outras características: {data['outras_caracteristicas'] or 'não informado'}
-Interesses: {data['interesses'] or 'não informado'}
-"""
+def compact_student_block(data):
+    diags = ", ".join(data["diagnosticos"]) if data["diagnosticos"] else "nenhum"
+    return (
+        f"Aluno: {data['nome'] or 'não informado'} | Idade: {data['idade'] or 'não informado'} | Série: {data['serie'] or 'não informado'}\n"
+        f"Diagnósticos: {diags}\n"
+        f"Características: {data.get('caracteristicas_sugeridas', 'não informado') or 'não informado'}\n"
+        f"Interesses: {data['interesses'] or 'não informado'}\n"
+        f"Perfil de aprendizagem:\n{data['perfil_aprendizagem']}"
+    )
 
 
-def contexto_studio_compacto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
+def contexto_curto(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes):
     especialidade = get_subject_specialization(materia, area)
     idioma = get_language_support_instruction(materia, area)
     anexos = "usar anexos só como embasamento; material final autossuficiente" if usa_fontes else "criar sem anexos; material final autossuficiente"
 
-    return f"""Crie material final para NotebookLM Studio.
+    return f"""NOTEBOOKLM STUDIO
 
-MATÉRIA: {materia or 'não informada'}
-ÁREA: {area or 'não informada'}
-CONTEÚDO DO DIA: {conteudo or 'não informado'}
-OBJETIVO DO DIA: {objetivo or 'não informado'}
-DIAS ATÉ A PROVA: {dias}
-SITUAÇÃO: {situacao}
-PRIORIDADE: {prioridade}
-COMO A ESCOLA COBRA: {estilo or 'não informado'}
-ANEXOS: {anexos}
+Matéria: {materia or 'não informada'}
+Área: {area or 'não informada'}
+Conteúdo do dia: {conteudo or 'não informado'}
+Objetivo do dia: {objetivo or 'não informado'}
+Dias até a prova: {dias}
+Situação: {situacao}
+Prioridade: {prioridade}
+Como a escola cobra: {estilo or 'não informado'}
+Anexos: {anexos}
 
-ESPECIALIDADE:
+Especialidade:
 {especialidade}
 
-ALUNO:
-{resumo_aluno_fn(data)}
+Aluno:
+{compact_student_block(data)}
 
-REGRAS:
+Regras fixas:
 - usar somente o conteúdo do dia
 - alinhar ao que costuma ser mais cobrado para a idade/série dentro do repertório dado
 - material totalmente autossuficiente
 - não depender de página, imagem, capítulo, trecho ou tela do livro
-- não escrever "observe a página", "veja a imagem", "como mostrado acima"
-- preservar termos oficiais do conteúdo
+- não escrever: "observe a página", "veja a imagem", "como mostrado acima"
+- preservar exatamente os termos oficiais do conteúdo
 - não inventar nomes novos para conceitos, categorias ou classificações
-- linguagem clara, útil e direta
 {idioma}
 """
 
 
-def prompt_video(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    return contexto_studio_compacto(
-        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
+def prompt_video(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn=None):
+    return contexto_curto(
+        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes
     ) + """
-TAREFA: gerar VIDEO OVERVIEW final.
+Tarefa: gerar VIDEO OVERVIEW final.
 
-EXIGÊNCIAS:
+Exigências:
 - vídeo curto
 - explicar apenas o conteúdo do dia
-- usar exemplos próprios, sem usar página ou imagem do livro
+- NÃO usar, mostrar, destacar ou enquadrar fotos/páginas/imagens do livro ou anexo
+- reconstruir tudo com cenas próprias, exemplos próprios e visuais próprios
 - manter os termos oficiais do conteúdo
 - não inventar termos substitutos
-- quando fizer pergunta, fazer pausa breve de alguns segundos antes de continuar
+- quando fizer pergunta, esperar cerca de 3 segundos antes de continuar
 - fechar com mini revisão
 """
 
 
-def prompt_audio(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    return contexto_studio_compacto(
-        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
+def prompt_audio(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn=None):
+    return contexto_curto(
+        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes
     ) + """
-TAREFA: gerar AUDIO OVERVIEW final para o responsável.
+Tarefa: gerar AUDIO OVERVIEW final para o responsável.
 
-EXIGÊNCIAS:
-- áudio curto e objetivo
+Exigências:
+- áudio direto e objetivo
+- duração alvo: 2 a 3 minutos
 - foco apenas no conteúdo do dia
 - resumir o que deve ser estudado hoje
 - explicar como conduzir a atividade
-- apontar onde o aluno pode travar
-- indicar como retomar rapidamente
+- apontar rapidamente onde o aluno pode travar
+- indicar como retomar de forma simples
 - manter os termos oficiais do conteúdo
 - não inventar termos substitutos
-- duração esperada curta, cerca de 2 a 4 minutos
+- evitar introduções longas, exemplos excessivos e aprofundamentos desnecessários
 """
 
 
-def prompt_slides(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    return contexto_studio_compacto(
-        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
+def prompt_slides(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn=None):
+    return contexto_curto(
+        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes
     ) + """
-TAREFA: gerar SLIDES finais.
+Tarefa: gerar SLIDES finais.
 
-EXIGÊNCIAS:
+Exigências:
 - usar apenas o conteúdo do dia
 - progressão: conceito, exemplo, erro comum, aplicação, revisão
 - exemplos próprios
@@ -172,27 +149,38 @@ EXIGÊNCIAS:
 """
 
 
-def prompt_flash(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    return contexto_studio_compacto(
-        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
+def prompt_flash(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn=None):
+    return contexto_curto(
+        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes
     ) + """
-TAREFA: gerar FLASHCARDS finais.
+Tarefa: gerar FLASHCARDS finais.
 
-EXIGÊNCIAS:
-- no máximo 10 cards
-- apenas conteúdo do dia
+Exigências obrigatórias:
+- entregar EXATAMENTE 10 flashcards
+- nem 9, nem 11, nem mais
+- usar apenas o conteúdo do dia
+- não expandir para outros conteúdos
 - focar no mais importante, mais cobrado e mais sujeito a erro
 - preservar os termos oficiais do conteúdo
+
+Formato:
+1. Frente: ...
+   Verso: ...
+2. Frente: ...
+   Verso: ...
+...
+10. Frente: ...
+    Verso: ...
 """
 
 
-def prompt_teste(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn):
-    return contexto_studio_compacto(
-        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn
+def prompt_teste(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_fn=None):
+    return contexto_curto(
+        data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes
     ) + """
-TAREFA: gerar TESTE final.
+Tarefa: gerar TESTE final.
 
-EXIGÊNCIAS:
+Exigências:
 - usar apenas o conteúdo do dia
 - gerar 5 questões
 - adaptar ao formato de cobrança da escola
@@ -204,17 +192,17 @@ EXIGÊNCIAS:
 def prompt_aula(data, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, selected, usa_fontes, modo_estudo_fn):
     base = f"""AULA COMPLETA
 
-MATÉRIA: {materia}
-ÁREA: {area or 'não informada'}
-CONTEÚDO DO DIA: {conteudo}
-OBJETIVO DO DIA: {objetivo or 'não informado'}
-DIAS ATÉ A PROVA: {dias}
-SITUAÇÃO: {situacao}
-PRIORIDADE: {prioridade}
-MODO DE ESTUDO: {modo_estudo_fn(dias, situacao)}
-COMO A ESCOLA COBRA: {estilo or 'não informado'}
+Matéria: {materia}
+Área: {area or 'não informada'}
+Conteúdo do dia: {conteudo}
+Objetivo do dia: {objetivo or 'não informado'}
+Dias até a prova: {dias}
+Situação: {situacao}
+Prioridade: {prioridade}
+Modo de estudo: {modo_estudo_fn(dias, situacao)}
+Como a escola cobra: {estilo or 'não informado'}
 
-REGRAS:
+Regras:
 - usar só o conteúdo do dia
 - preservar termos oficiais
 - não inventar conceitos
@@ -224,13 +212,13 @@ REGRAS:
     parts = [base]
 
     if "Vídeo" in selected:
-        parts.append("[VIDEO OVERVIEW]\n- vídeo curto, com exemplos próprios e pausas após perguntas")
+        parts.append("[VIDEO OVERVIEW]\n- vídeo curto, com cenas próprias, sem imagens do livro e com pausas após perguntas")
     if "Áudio (responsável)" in selected:
-        parts.append("[AUDIO OVERVIEW]\n- áudio curto, direto e objetivo para condução do estudo do dia")
+        parts.append("[AUDIO OVERVIEW]\n- áudio curto, 2 a 3 minutos, direto e objetivo")
     if "Slides" in selected:
         parts.append("[SLIDES]\n- slides autossuficientes, sem depender do livro")
     if "Flashcards (máx 10)" in selected:
-        parts.append("[FLASHCARDS]\n- no máximo 10 cards, apenas do conteúdo do dia")
+        parts.append("[FLASHCARDS]\n- EXATAMENTE 10 cards, apenas do conteúdo do dia")
     if "Teste" in selected:
         parts.append("[TESTE]\n- 5 questões com gabarito")
 
@@ -241,7 +229,11 @@ def prompt_cronograma(data, materia, area, conteudos, data_hoje, data_prova, alt
     especialidade = get_subject_specialization(materia, area)
     idioma = get_language_support_instruction(materia, area)
 
-    return f"""{build_base_prompt(data)}
+    return f"""PERFIL DO ALUNO
+Aluno: {data['nome']} ({data['apelido']})
+Idade: {data['idade']}
+Série: {data['serie']}
+
 ESPECIALIDADE:
 {especialidade}
 
