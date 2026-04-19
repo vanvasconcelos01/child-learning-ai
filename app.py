@@ -1,5 +1,4 @@
 import datetime
-import json
 import streamlit as st
 
 from constants import (
@@ -21,7 +20,7 @@ from constants import (
     AREA_MATERIA_OPTIONS,
     STEPS,
 )
-from state import init_state, migrate_legacy_keys
+from state import init_state
 from ui_components import inject_styles, checkbox_group, radio_group, slugify
 from profile_logic import (
     formatar_data_br,
@@ -41,94 +40,55 @@ from prompts import (
     prompt_aula,
     prompt_cronograma,
 )
-from storage import load_saved_profiles, save_saved_profiles
+from storage import load_profiles, save_profile, delete_profile
 
-st.set_page_config(page_title="EduAI Studio v8 Clean", page_icon="🧠", layout="wide")
-
+st.set_page_config(page_title="EduAI Studio", page_icon="🧠", layout="wide")
 init_state()
-migrate_legacy_keys()
 inject_styles()
 
-# =====================================================
-# Estado base
-# =====================================================
-
-st.session_state.setdefault("saved_profiles", {})
+# estado base
+st.session_state.setdefault("saved_profiles", load_profiles())
 st.session_state.setdefault("current_step", "Perfil")
 st.session_state.setdefault("nav_message", "")
 st.session_state.setdefault("nav_message_type", "info")
-st.session_state.setdefault("mostrar_debug", False)
-st.session_state.setdefault("perfil_sidebar_select", "")
 st.session_state.setdefault("novo_nome_perfil", "")
+st.session_state.setdefault("perfil_sidebar_select", "")
 
-if not st.session_state["saved_profiles"]:
-    st.session_state["saved_profiles"] = load_saved_profiles()
-
-# =====================================================
-# Helpers
-# =====================================================
-
-def set_msg(msg, kind="info"):
+# utilidades
+def set_nav_message(msg, tp="info"):
     st.session_state["nav_message"] = msg
-    st.session_state["nav_message_type"] = kind
+    st.session_state["nav_message_type"] = tp
 
-
-def goto_step(step):
-    st.session_state["current_step"] = step
+def goto_step(step_name):
+    st.session_state["current_step"] = step_name
     st.rerun()
-
 
 def next_step():
     idx = STEPS.index(st.session_state["current_step"])
     if idx < len(STEPS) - 1:
         goto_step(STEPS[idx + 1])
 
-
 def prev_step():
     idx = STEPS.index(st.session_state["current_step"])
     if idx > 0:
         goto_step(STEPS[idx - 1])
 
-
 def footer_nav():
-    c1, c2, _ = st.columns([1, 1, 6])
-
+    c1, c2, _ = st.columns([1, 1, 4])
     with c1:
         if STEPS.index(st.session_state["current_step"]) > 0:
             if st.button("⬅ Anterior", use_container_width=True, key=f"prev_{st.session_state['current_step']}"):
                 prev_step()
-
     with c2:
         if STEPS.index(st.session_state["current_step"]) < len(STEPS) - 1:
             if st.button("Próxima ➜", use_container_width=True, key=f"next_{st.session_state['current_step']}"):
                 next_step()
-
-
-def get_profile_base(date_obj=None):
-    if date_obj is None:
-        date_obj = datetime.date.today()
-    atualizar_caracteristicas_sugeridas()
-    return get_perfil_data(formatar_data_br(date_obj))
-
-
-def show_prompt_block(title: str, text: str, key_suffix: str):
-    st.markdown(f"#### {title}")
-    st.code(text, language="text")
-    with st.expander("Visualizar em caixa de texto"):
-        st.text_area(
-            f"{title} (visualização)",
-            value=text,
-            height=220,
-            key=f"view_{key_suffix}",
-        )
-
 
 def sync_checkbox_group_keys(state_key, options):
     selected = set(st.session_state.get(state_key, []))
     for option in options:
         widget_key = f"{state_key}_{slugify(option)}"
         st.session_state[widget_key] = bool(option in selected)
-
 
 def sync_all_checkbox_groups():
     sync_checkbox_group_keys("interesses", INTERESSES_OPTIONS)
@@ -144,8 +104,11 @@ def sync_all_checkbox_groups():
         ["Vídeo", "Áudio (responsável)", "Slides", "Flashcards (máx 10)", "Teste"],
     )
 
+def get_profile():
+    atualizar_caracteristicas_sugeridas()
+    return get_perfil_data()
 
-def collect_profile_payload():
+def get_profile_payload():
     atualizar_caracteristicas_sugeridas()
     return {
         "nome": st.session_state.get("nome", ""),
@@ -159,10 +122,10 @@ def collect_profile_payload():
         "interesses_outro": st.session_state.get("interesses_outro", ""),
         "diagnosticos": st.session_state.get("diagnosticos", []),
         "outro_diagnostico": st.session_state.get("outro_diagnostico", ""),
-        "outras_caracteristicas": st.session_state.get("outras_caracteristicas", ""),
         "caracteristicas_sugeridas": st.session_state.get("caracteristicas_sugeridas", ""),
+        "outras_caracteristicas": st.session_state.get("outras_caracteristicas", ""),
         "atencao_sustentada": st.session_state.get("atencao_sustentada", "Média"),
-        "autonomia": st.session_state.get("autonomia", "Precisa de alguma mediação"),
+        "autonomia": st.session_state.get("autonomia", "Alguma mediação"),
         "canal_preferencial": st.session_state.get("canal_preferencial", "Visual"),
         "tolerancia_frustracao": st.session_state.get("tolerancia_frustracao", "Média"),
         "leitura_nivel": st.session_state.get("leitura_nivel", "Adequado"),
@@ -181,36 +144,17 @@ def collect_profile_payload():
         "retomada_outro": st.session_state.get("retomada_outro", ""),
     }
 
-
-def apply_profile_payload(payload: dict):
+def apply_profile_payload(payload):
     for k, v in payload.items():
         st.session_state[k] = v
     sync_all_checkbox_groups()
     atualizar_caracteristicas_sugeridas()
 
-
-def save_profile_to_disk(profile_name: str):
-    profiles = load_saved_profiles()
-    profiles[profile_name] = collect_profile_payload()
-    save_saved_profiles(profiles)
-    st.session_state["saved_profiles"] = profiles
-
-
-def load_profile_from_disk(profile_name: str):
-    profiles = load_saved_profiles()
-    payload = profiles.get(profile_name)
-    if payload:
-        apply_profile_payload(payload)
-        st.session_state["saved_profiles"] = profiles
-
-
-def delete_profile_from_disk(profile_name: str):
-    profiles = load_saved_profiles()
-    if profile_name in profiles:
-        del profiles[profile_name]
-        save_saved_profiles(profiles)
-    st.session_state["saved_profiles"] = profiles
-
+def show_prompt_block(title, text, key_name):
+    st.markdown(f"#### {title}")
+    st.code(text, language="text")
+    with st.expander("Visualizar em caixa de texto"):
+        st.text_area(f"{title} (visualização)", value=text, height=220, key=f"txt_{key_name}")
 
 def apply_cronograma_to_config():
     campos = extrair_campos_cronograma(st.session_state.get("cronograma_linha_do_dia", ""))
@@ -221,7 +165,6 @@ def apply_cronograma_to_config():
     st.session_state["config_area_materia"] = st.session_state.get("cron_area_materia", "")
     st.session_state["config_did_hoje"] = st.session_state.get("cron_hoje_input", datetime.date.today())
     st.session_state["config_did_prova"] = st.session_state.get("cron_prova_input", datetime.date.today())
-
     st.session_state["conteudo_dia"] = (
         campos["texto_colar"]
         or campos["conteudo"]
@@ -231,88 +174,64 @@ def apply_cronograma_to_config():
     if campos["objetivo"]:
         st.session_state["objetivo_dia"] = campos["objetivo"]
 
-    set_msg(
-        "Matéria, conteúdo do dia, objetivo e datas foram enviados para Configuração.",
-        "success",
-    )
+    set_nav_message("Linha enviada para Configuração.", "success")
 
-# sincroniza checkboxes antigos/salvos
+# sincroniza checkboxes com valores salvos
 sync_all_checkbox_groups()
 
-# =====================================================
-# Sidebar
-# =====================================================
-
+# sidebar
 with st.sidebar:
     st.markdown("## Etapas")
+    current_idx = STEPS.index(st.session_state["current_step"])
+    st.progress((current_idx + 1) / len(STEPS))
+    st.caption(f"Etapa {current_idx + 1} de {len(STEPS)}")
 
-    idx = STEPS.index(st.session_state["current_step"])
-    st.progress((idx + 1) / len(STEPS))
-    st.caption(f"Etapa {idx+1} de {len(STEPS)}")
-
-    for step_name in STEPS:
-        emoji = "👉 " if step_name == st.session_state["current_step"] else ""
-        if st.button(f"{emoji}{step_name}", use_container_width=True, key=f"nav_{step_name}"):
-            goto_step(step_name)
+    for step in STEPS:
+        emoji = "👉 " if step == st.session_state["current_step"] else ""
+        if st.button(f"{emoji}{step}", use_container_width=True, key=f"nav_{step}"):
+            goto_step(step)
 
     st.markdown("---")
     st.markdown("## Perfis salvos")
 
-    profiles = load_saved_profiles()
-    st.session_state["saved_profiles"] = profiles
-    saved_names = sorted(list(profiles.keys()))
+    perfis = load_profiles()
+    st.session_state["saved_profiles"] = perfis
+    nomes = sorted(list(perfis.keys()))
 
-    if not saved_names:
-        st.caption("Nenhum perfil salvo.")
-    else:
-        selected_profile = st.selectbox(
-            "Selecionar perfil",
-            options=[""] + saved_names,
-            key="perfil_sidebar_select",
-        )
-
+    if nomes:
+        perfil_sel = st.selectbox("Selecionar perfil", [""] + nomes, key="perfil_sidebar_select")
         c1, c2 = st.columns(2)
 
         with c1:
-            if st.button("Carregar", use_container_width=True, key="sidebar_load_profile"):
-                if selected_profile:
-                    load_profile_from_disk(selected_profile)
-                    set_msg(f"Perfil '{selected_profile}' carregado.", "success")
+            if st.button("Carregar", use_container_width=True, key="load_profile_sidebar"):
+                if perfil_sel:
+                    apply_profile_payload(perfis[perfil_sel])
+                    set_nav_message(f"Perfil '{perfil_sel}' carregado.", "success")
                     st.rerun()
 
         with c2:
-            if st.button("Excluir", use_container_width=True, key="sidebar_delete_profile"):
-                if selected_profile:
-                    delete_profile_from_disk(selected_profile)
+            if st.button("Excluir", use_container_width=True, key="delete_profile_sidebar"):
+                if perfil_sel:
+                    delete_profile(perfil_sel)
+                    st.session_state["saved_profiles"] = load_profiles()
                     st.session_state["perfil_sidebar_select"] = ""
-                    set_msg(f"Perfil '{selected_profile}' excluído.", "success")
+                    set_nav_message(f"Perfil '{perfil_sel}' excluído.", "success")
                     st.rerun()
+    else:
+        st.caption("Nenhum perfil salvo.")
 
-    st.markdown("---")
-    st.session_state["mostrar_debug"] = st.checkbox(
-        "Mostrar detalhes técnicos",
-        value=st.session_state.get("mostrar_debug", False),
-    )
-
-# =====================================================
-# Header
-# =====================================================
-
-st.title("🧠 EduAI Studio v8 Clean")
+# header
+st.title("🧠 EduAI Studio")
 st.caption("Fluxo estável, prompts curtos e perfis persistentes.")
 
 if st.session_state["nav_message"]:
-    kind = st.session_state["nav_message_type"]
-    if kind == "success":
+    tp = st.session_state["nav_message_type"]
+    if tp == "success":
         st.success(st.session_state["nav_message"])
-    elif kind == "warning":
+    elif tp == "warning":
         st.warning(st.session_state["nav_message"])
     else:
         st.info(st.session_state["nav_message"])
-
-# =====================================================
-# Router
-# =====================================================
 
 step = st.session_state["current_step"]
 
@@ -324,7 +243,6 @@ if step == "Perfil":
         st.text_input("Nome", key="nome")
         st.text_input("Idade", key="idade")
         st.text_input("Escola", key="escola")
-
     with c2:
         st.text_input("Apelido", key="apelido")
         st.text_input("Série / Ano", key="serie")
@@ -334,13 +252,11 @@ if step == "Perfil":
 
     st.markdown("### Interesses")
     checkbox_group("Interesses", INTERESSES_OPTIONS, "interesses", columns=4)
-
     if "Outro" in st.session_state.get("interesses", []):
         st.text_input("Outro interesse", key="interesses_outro")
 
     st.markdown("### Diagnósticos")
     checkbox_group("Diagnósticos", DIAG_OPTIONS, "diagnosticos", columns=3)
-
     if "Outro" in st.session_state.get("diagnosticos", []):
         st.text_input("Outro diagnóstico", key="outro_diagnostico")
 
@@ -349,8 +265,8 @@ if step == "Perfil":
     st.text_area(
         "Características sugeridas automaticamente",
         value=st.session_state.get("caracteristicas_sugeridas", ""),
-        height=160,
-        disabled=True,
+        height=140,
+        disabled=True
     )
 
     st.text_area("Outras características", key="outras_caracteristicas", height=120)
@@ -363,8 +279,9 @@ if step == "Perfil":
         if st.button("Salvar", key="save_profile_btn"):
             nome = st.session_state.get("novo_nome_perfil", "").strip()
             if nome:
-                save_profile_to_disk(nome)
-                set_msg("Perfil salvo.", "success")
+                save_profile(nome, get_profile_payload())
+                st.session_state["saved_profiles"] = load_profiles()
+                set_nav_message("Perfil salvo.", "success")
                 st.rerun()
 
     footer_nav()
@@ -421,18 +338,18 @@ elif step == "Cronograma":
     st.text_area("Conteúdos", key="cron_conteudos", height=120)
 
     txt = prompt_cronograma(
-        get_profile_base(prova),
+        get_profile(),
         st.session_state.get("cron_materia", ""),
         st.session_state.get("cron_area_materia", ""),
         st.session_state.get("cron_conteudos", ""),
         formatar_data_br(hoje),
         formatar_data_br(prova),
-        "",
-        "",
-        "",
+        st.session_state.get("cron_alta", ""),
+        st.session_state.get("cron_media", ""),
+        st.session_state.get("cron_baixa", ""),
     )
 
-    show_prompt_block("Prompt do cronograma", txt, "cronograma")
+    show_prompt_block("Prompt do cronograma", txt, "cron")
 
     st.text_area("Linha do dia", key="cronograma_linha_do_dia", height=90)
 
@@ -465,7 +382,7 @@ elif step == "Configuração":
         "Materiais",
         ["Vídeo", "Áudio (responsável)", "Slides", "Flashcards (máx 10)", "Teste"],
         "selected_materials",
-        columns=3,
+        columns=3
     )
 
     footer_nav()
@@ -475,7 +392,7 @@ elif step == "Studio":
     hoje = st.session_state.get("config_did_hoje", datetime.date.today())
     dias = (prova - hoje).days
 
-    perfil = get_profile_base(prova)
+    perfil = get_profile()
     estilo = obter_cobranca()
 
     materia = st.session_state.get("mat_did", "")
@@ -492,35 +409,35 @@ elif step == "Studio":
         show_prompt_block(
             "Prompt Vídeo",
             prompt_video(perfil, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_compacto),
-            "video",
+            "video"
         )
 
     if "Áudio (responsável)" in materiais:
         show_prompt_block(
             "Prompt Áudio",
             prompt_audio(perfil, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_compacto),
-            "audio",
+            "audio"
         )
 
     if "Slides" in materiais:
         show_prompt_block(
             "Prompt Slides",
             prompt_slides(perfil, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_compacto),
-            "slides",
+            "slides"
         )
 
     if "Flashcards (máx 10)" in materiais:
         show_prompt_block(
             "Prompt Flashcards",
             prompt_flash(perfil, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_compacto),
-            "flash",
+            "flash"
         )
 
     if "Teste" in materiais:
         show_prompt_block(
             "Prompt Teste",
             prompt_teste(perfil, materia, area, conteudo, objetivo, estilo, situacao, prioridade, dias, usa_fontes, resumo_aluno_compacto),
-            "teste",
+            "teste"
         )
 
     footer_nav()
@@ -531,7 +448,7 @@ elif step == "Aula Completa":
     dias = (prova - hoje).days
 
     txt = prompt_aula(
-        get_profile_base(prova),
+        get_profile(),
         st.session_state.get("mat_did", ""),
         st.session_state.get("config_area_materia", ""),
         st.session_state.get("conteudo_dia", ""),
@@ -542,9 +459,8 @@ elif step == "Aula Completa":
         dias,
         st.session_state.get("selected_materials", []),
         False,
-        modo_estudo,
+        modo_estudo
     )
 
     show_prompt_block("Pacote completo", txt, "aula")
-
     footer_nav()
