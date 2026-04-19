@@ -1,12 +1,32 @@
 PT_MONTHS = {
-    1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril", 5: "maio", 6: "junho",
-    7: "julho", 8: "agosto", 9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro"
+    1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril",
+    5: "maio", 6: "junho", 7: "julho", 8: "agosto",
+    9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro"
 }
 
+STEPS = [
+    "Perfil",
+    "Aprendizagem",
+    "Cronograma",
+    "Configuração",
+    "Studio",
+    "Aula Completa"
+]
+
+INTERESSES_OPTIONS = [
+    "games", "Minecraft", "Roblox", "Pokémon", "futebol",
+    "animais", "dinossauros", "espaço", "ciência",
+    "arte", "música", "livros", "aventura", "Outro"
+]
+
 DIAG_OPTIONS = [
-    "TDAH", "TEA nível 1", "TEA nível 2", "TEA nível 3",
-    "Dislexia", "Discalculia", "Processamento auditivo",
-    "Ansiedade", "TOD", "Outro"
+    "TDAH",
+    "TEA nível 1",
+    "Dislexia",
+    "Discalculia",
+    "Processamento auditivo",
+    "Ansiedade",
+    "Outro"
 ]
 
 DIAG_CHARACTERISTICS = {
@@ -14,151 +34,67 @@ DIAG_CHARACTERISTICS = {
         "atenção curta",
         "beneficia-se de blocos curtos",
         "precisa de ritmo dinâmico",
-        "responde melhor a objetivos claros e rápidos",
-        "aprende melhor com estímulos visuais e interação"
-    ],
-    "TEA nível 1": [
-        "beneficia-se de previsibilidade",
-        "precisa de instruções claras e objetivas",
-        "pode ter dificuldade com linguagem ambígua",
-        "responde bem a rotinas estruturadas"
-    ],
-    "TEA nível 2": [
-        "necessita maior estrutura e mediação",
-        "precisa de previsibilidade e linguagem muito clara",
-        "beneficia-se de passo a passo explícito",
-        "pode demandar apoio mais frequente para transições"
-    ],
-    "TEA nível 3": [
-        "necessita alto suporte",
-        "precisa de linguagem simples, direta e previsível",
-        "beneficia-se de rotinas muito estruturadas",
-        "demanda mediação intensiva e apoio constante"
+        "responde melhor a objetivos claros"
     ],
     "Dislexia": [
         "beneficia-se de menor carga textual",
-        "precisa de frases mais curtas",
-        "responde melhor a apoio visual",
-        "pode cansar com leitura longa"
+        "precisa de apoio visual",
+        "frases mais curtas"
     ],
     "Discalculia": [
-        "precisa de apoio concreto e visual",
-        "beneficia-se de progressão muito gradual",
-        "responde melhor a exemplos práticos",
-        "pode travar diante de abstrações numéricas rápidas"
+        "precisa de apoio concreto",
+        "progressão gradual",
+        "exemplos visuais"
     ],
     "Processamento auditivo": [
         "beneficia-se de apoio visual constante",
-        "pode ter dificuldade com instruções longas faladas",
-        "precisa de mensagens curtas e objetivas",
-        "responde melhor quando vê e ouve ao mesmo tempo"
+        "mensagens curtas",
+        "ver e ouvir ao mesmo tempo ajuda"
     ],
     "Ansiedade": [
         "pode travar sob pressão",
-        "precisa de segurança e progressão leve",
-        "beneficia-se de previsibilidade e encorajamento objetivo",
-        "responde melhor quando o erro é tratado com calma"
-    ],
-    "TOD": [
-        "pode reagir melhor a linguagem neutra e respeitosa",
-        "beneficia-se de escolhas simples e combinados claros",
-        "responde melhor a estrutura firme sem confronto"
-    ],
+        "precisa de previsibilidade",
+        "erro deve ser tratado com calma"
+    ]
 }
-
-INTERESSES_OPTIONS = [
-    "games", "histórias de fantasia", "futebol", "Pokémon", "música", "desenhos",
-    "arte", "animais", "dinossauros", "super-heróis", "Minecraft", "Roblox",
-    "ciência", "espaço", "mistério", "aventura", "livros", "corridas",
-    "dança", "tecnologia", "Outro"
-]
 
 ESCOLA_COBRANCA_OPTIONS = [
     "questões objetivas",
     "questões dissertativas curtas",
     "interpretação de texto",
     "interpretação com imagens",
-    "situações do cotidiano",
-    "resolução passo a passo",
-    "comparação entre conceitos",
-    "associação de colunas",
-    "verdadeiro ou falso",
-    "completar lacunas",
-    "sequência lógica / ordenação",
     "mapas, gráficos ou tabelas",
     "vocabulário e definições",
-    "produção de resposta oral",
     "Outro"
 ]
 
 ATENCAO_OPTIONS = ["Muito baixa", "Baixa", "Média", "Boa"]
-AUTONOMIA_OPTIONS = ["Precisa de muita mediação", "Precisa de alguma mediação", "Quase independente"]
-CANAL_OPTIONS = ["Visual", "Auditivo", "Leitura guiada", "Manipulação / concreto", "Misto"]
+AUTONOMIA_OPTIONS = ["Precisa de muita mediação", "Alguma mediação", "Quase independente"]
+CANAL_OPTIONS = ["Visual", "Auditivo", "Misto"]
 FRUSTRACAO_OPTIONS = ["Baixa", "Média", "Boa"]
 NIVEL_OPTIONS = ["Abaixo do esperado", "Adequado", "Acima do esperado"]
 
-ERRO_OPTIONS = [
-    "trava",
-    "chuta",
-    "dispersa",
-    "fica ansioso",
-    "recusa",
-    "Outro"
-]
-
-ENGAJAMENTO_OPTIONS = [
-    "desafios curtos",
-    "competição leve",
-    "exemplos visuais",
-    "histórias e narrativa",
-    "jogos e quizzes",
-    "curiosidades",
-    "atividades práticas",
-    "recompensa rápida",
-    "passo a passo guiado",
-    "variação de estímulos",
-    "Outro"
-]
-
+ERRO_OPTIONS = ["trava", "chuta", "dispersa", "fica ansioso", "Outro"]
+ENGAJAMENTO_OPTIONS = ["jogos", "quiz", "visual", "desafios curtos", "Outro"]
 DIFICULDADE_OPTIONS = [
-    "manter atenção até o fim",
-    "entender enunciados longos",
-    "organizar o pensamento",
-    "memorizar conteúdo",
+    "manter atenção",
     "interpretar texto",
+    "memorizar",
     "resolver sozinho",
-    "começar a atividade",
-    "lidar com erros",
-    "fazer cálculos mentalmente",
-    "acompanhar explicações orais longas",
     "Outro"
 ]
-
 TRAVA_OPTIONS = [
-    "fica disperso",
-    "muda de assunto",
-    "diz que não sabe",
-    "chuta respostas",
-    "fica ansioso",
-    "se irrita",
     "fica em silêncio",
+    "diz que não sabe",
+    "pede ajuda",
     "quer parar",
-    "pede ajuda imediatamente",
-    "demora para começar",
     "Outro"
 ]
-
 RETOMADA_OPTIONS = [
-    "dividir em partes menores",
-    "dar exemplo parecido",
+    "dividir em partes",
     "usar apoio visual",
-    "ler junto",
-    "fazer pergunta mais simples",
-    "dar duas opções",
+    "dar exemplo",
     "retomar do último acerto",
-    "pausa curta e voltar",
-    "reforço positivo objetivo",
-    "transformar em desafio curto",
     "Outro"
 ]
 
@@ -172,42 +108,30 @@ AREA_MATERIA_OPTIONS = [
     "Ciências da Natureza",
     "Humanas",
     "Idiomas",
-    "Artes",
-    "Tecnologia"
-]
-
-STEPS = [
-    "Perfil",
-    "Aprendizagem",
-    "Cronograma",
-    "Configuração",
-    "Studio",
-    "Aula Completa",
+    "Artes"
 ]
 
 DEFAULTS = {
+    "current_step": "Perfil",
+
     "nome": "",
     "apelido": "",
     "idade": "",
     "serie": "",
     "escola": "",
     "turno": "",
+    "responsavel": "",
+
     "interesses": [],
     "interesses_outro": "",
-    "responsavel": "",
 
     "diagnosticos": [],
     "outro_diagnostico": "",
-    "outras_caracteristicas": "",
     "caracteristicas_sugeridas": "",
-
-    "usa_fontes": False,
-    "selected_materials": ["Vídeo", "Áudio (responsável)", "Slides"],
-    "cobranca_escola": [],
-    "cobranca_extra": "",
+    "outras_caracteristicas": "",
 
     "atencao_sustentada": "Média",
-    "autonomia": "Precisa de alguma mediação",
+    "autonomia": "Alguma mediação",
     "canal_preferencial": "Visual",
     "tolerancia_frustracao": "Média",
     "leitura_nivel": "Adequado",
@@ -220,10 +144,13 @@ DEFAULTS = {
 
     "engajamento": [],
     "engajamento_outro": "",
+
     "principal_dificuldade": [],
     "dificuldade_outro": "",
+
     "sinais_quando_trava": [],
     "trava_outro": "",
+
     "melhor_forma_retomar": [],
     "retomada_outro": "",
 
@@ -242,27 +169,9 @@ DEFAULTS = {
     "situacao_conteudo": "novo",
     "prioridade_conteudo": "alta",
 
-    "current_step": "Perfil",
-    "saved_profiles": {},
-    "novo_nome_perfil": "",
-    "nav_message": "",
-    "nav_message_type": "info",
-}
+    "usa_fontes": False,
+    "selected_materials": ["Vídeo", "Slides", "Teste"],
 
-LEGACY_KEY_MAP = {
-    "perfil_nome_input": "nome",
-    "perfil_apelido_input": "apelido",
-    "perfil_idade_input": "idade",
-    "perfil_serie_input": "serie",
-    "perfil_escola_input": "escola",
-    "perfil_turno_input": "turno",
-    "perfil_responsavel_input": "responsavel",
-    "config_materia_input": "mat_did",
-    "config_conteudo_dia_textarea": "conteudo_dia",
-    "config_objetivo_input": "objetivo_dia",
-    "cron_materia_input": "cron_materia",
-    "cron_conteudos_textarea": "cron_conteudos",
-    "cron_alta_textarea": "cron_alta",
-    "cron_media_textarea": "cron_media",
-    "cron_baixa_textarea": "cron_baixa",
+    "cobranca_escola": [],
+    "cobranca_extra": ""
 }
