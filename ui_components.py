@@ -5,20 +5,24 @@ import streamlit as st
 def inject_styles():
     st.markdown("""
     <style>
-    .block-container {padding-top: 1rem; padding-bottom: 2rem;}
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+    }
+
     [data-testid="stAppViewContainer"] {
         background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
     }
-    .card {
-        padding: 16px 18px;
-        border-radius: 18px;
-        background: white;
-        border: 1px solid rgba(15, 23, 42, 0.08);
-        box-shadow: 0 6px 24px rgba(15, 23, 42, 0.05);
-        margin-bottom: 12px;
+
+    .small {
+        color: #475569;
+        font-size: 0.92rem;
     }
-    .small {color: #475569; font-size: 0.92rem;}
-    h1, h2, h3 {color: #0f172a;}
+
+    h1, h2, h3 {
+        color: #0f172a;
+    }
+
     hr {
         margin-top: 0.5rem;
         margin-bottom: 1rem;
@@ -44,7 +48,6 @@ def checkbox_group(label, options, state_key, columns=3):
     for i, option in enumerate(options):
         widget_key = f"{state_key}_{slugify(option)}"
 
-        # força sempre um valor booleano
         valor_atual = st.session_state.get(widget_key, option in selecionados)
         if not isinstance(valor_atual, bool):
             valor_atual = option in selecionados
