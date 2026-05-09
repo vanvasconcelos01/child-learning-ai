@@ -43,10 +43,10 @@ from prompts import (
 from storage import load_profiles, save_profile, delete_profile
 
 st.set_page_config(page_title="EduAI Studio", page_icon="🧠", layout="wide")
+
 init_state()
 inject_styles()
 
-# estado base
 st.session_state.setdefault("saved_profiles", load_profiles())
 st.session_state.setdefault("current_step", "Perfil")
 st.session_state.setdefault("nav_message", "")
@@ -54,41 +54,49 @@ st.session_state.setdefault("nav_message_type", "info")
 st.session_state.setdefault("novo_nome_perfil", "")
 st.session_state.setdefault("perfil_sidebar_select", "")
 
-# utilidades
+
 def set_nav_message(msg, tp="info"):
     st.session_state["nav_message"] = msg
     st.session_state["nav_message_type"] = tp
 
+
 def goto_step(step_name):
     st.session_state["current_step"] = step_name
     st.rerun()
+
 
 def next_step():
     idx = STEPS.index(st.session_state["current_step"])
     if idx < len(STEPS) - 1:
         goto_step(STEPS[idx + 1])
 
+
 def prev_step():
     idx = STEPS.index(st.session_state["current_step"])
     if idx > 0:
         goto_step(STEPS[idx - 1])
 
+
 def footer_nav():
     c1, c2, _ = st.columns([1, 1, 4])
+
     with c1:
         if STEPS.index(st.session_state["current_step"]) > 0:
             if st.button("⬅ Anterior", use_container_width=True, key=f"prev_{st.session_state['current_step']}"):
                 prev_step()
+
     with c2:
         if STEPS.index(st.session_state["current_step"]) < len(STEPS) - 1:
             if st.button("Próxima ➜", use_container_width=True, key=f"next_{st.session_state['current_step']}"):
                 next_step()
+
 
 def sync_checkbox_group_keys(state_key, options):
     selected = set(st.session_state.get(state_key, []))
     for option in options:
         widget_key = f"{state_key}_{slugify(option)}"
         st.session_state[widget_key] = bool(option in selected)
+
 
 def sync_all_checkbox_groups():
     sync_checkbox_group_keys("interesses", INTERESSES_OPTIONS)
@@ -104,9 +112,11 @@ def sync_all_checkbox_groups():
         ["Vídeo", "Áudio (responsável)", "Slides", "Flashcards (máx 10)", "Teste"],
     )
 
+
 def get_profile():
     atualizar_caracteristicas_sugeridas()
     return get_perfil_data()
+
 
 def get_profile_payload():
     atualizar_caracteristicas_sugeridas()
@@ -144,17 +154,27 @@ def get_profile_payload():
         "retomada_outro": st.session_state.get("retomada_outro", ""),
     }
 
+
 def apply_profile_payload(payload):
     for k, v in payload.items():
         st.session_state[k] = v
+
     sync_all_checkbox_groups()
     atualizar_caracteristicas_sugeridas()
+
 
 def show_prompt_block(title, text, key_name):
     st.markdown(f"#### {title}")
     st.code(text, language="text")
+
     with st.expander("Visualizar em caixa de texto"):
-        st.text_area(f"{title} (visualização)", value=text, height=220, key=f"txt_{key_name}")
+        st.text_area(
+            f"{title} (visualização)",
+            value=text,
+            height=220,
+            key=f"txt_{key_name}"
+        )
+
 
 def apply_cronograma_to_config():
     campos = extrair_campos_cronograma(st.session_state.get("cronograma_linha_do_dia", ""))
@@ -165,6 +185,7 @@ def apply_cronograma_to_config():
     st.session_state["config_area_materia"] = st.session_state.get("cron_area_materia", "")
     st.session_state["config_did_hoje"] = st.session_state.get("cron_hoje_input", datetime.date.today())
     st.session_state["config_did_prova"] = st.session_state.get("cron_prova_input", datetime.date.today())
+
     st.session_state["conteudo_dia"] = (
         campos["texto_colar"]
         or campos["conteudo"]
@@ -176,20 +197,18 @@ def apply_cronograma_to_config():
 
     set_nav_message("Linha enviada para Configuração.", "success")
 
-# sincroniza checkboxes com valores salvos
-sync_all_checkbox_groups()
 
-# sidebar
 with st.sidebar:
     st.markdown("## Etapas")
+
     current_idx = STEPS.index(st.session_state["current_step"])
     st.progress((current_idx + 1) / len(STEPS))
     st.caption(f"Etapa {current_idx + 1} de {len(STEPS)}")
 
-    for step in STEPS:
-        emoji = "👉 " if step == st.session_state["current_step"] else ""
-        if st.button(f"{emoji}{step}", use_container_width=True, key=f"nav_{step}"):
-            goto_step(step)
+    for step_name in STEPS:
+        emoji = "👉 " if step_name == st.session_state["current_step"] else ""
+        if st.button(f"{emoji}{step_name}", use_container_width=True, key=f"nav_{step_name}"):
+            goto_step(step_name)
 
     st.markdown("---")
     st.markdown("## Perfis salvos")
@@ -199,7 +218,12 @@ with st.sidebar:
     nomes = sorted(list(perfis.keys()))
 
     if nomes:
-        perfil_sel = st.selectbox("Selecionar perfil", [""] + nomes, key="perfil_sidebar_select")
+        perfil_sel = st.selectbox(
+            "Selecionar perfil",
+            [""] + nomes,
+            key="perfil_sidebar_select"
+        )
+
         c1, c2 = st.columns(2)
 
         with c1:
@@ -220,12 +244,13 @@ with st.sidebar:
     else:
         st.caption("Nenhum perfil salvo.")
 
-# header
+
 st.title("🧠 EduAI Studio")
 st.caption("Fluxo estável, prompts curtos e perfis persistentes.")
 
 if st.session_state["nav_message"]:
     tp = st.session_state["nav_message_type"]
+
     if tp == "success":
         st.success(st.session_state["nav_message"])
     elif tp == "warning":
@@ -233,16 +258,19 @@ if st.session_state["nav_message"]:
     else:
         st.info(st.session_state["nav_message"])
 
+
 step = st.session_state["current_step"]
 
 if step == "Perfil":
     st.subheader("Perfil do aluno")
 
     c1, c2 = st.columns(2)
+
     with c1:
         st.text_input("Nome", key="nome")
         st.text_input("Idade", key="idade")
         st.text_input("Escola", key="escola")
+
     with c2:
         st.text_input("Apelido", key="apelido")
         st.text_input("Série / Ano", key="serie")
@@ -252,11 +280,13 @@ if step == "Perfil":
 
     st.markdown("### Interesses")
     checkbox_group("Interesses", INTERESSES_OPTIONS, "interesses", columns=4)
+
     if "Outro" in st.session_state.get("interesses", []):
         st.text_input("Outro interesse", key="interesses_outro")
 
     st.markdown("### Diagnósticos")
     checkbox_group("Diagnósticos", DIAG_OPTIONS, "diagnosticos", columns=3)
+
     if "Outro" in st.session_state.get("diagnosticos", []):
         st.text_input("Outro diagnóstico", key="outro_diagnostico")
 
@@ -269,15 +299,23 @@ if step == "Perfil":
         disabled=True
     )
 
-    st.text_area("Outras características", key="outras_caracteristicas", height=120)
+    st.text_area(
+        "Outras características",
+        key="outras_caracteristicas",
+        height=120
+    )
 
     st.markdown("### Salvar perfil")
+
     c1, c2 = st.columns([3, 1])
+
     with c1:
         st.text_input("Nome para salvar", key="novo_nome_perfil")
+
     with c2:
         if st.button("Salvar", key="save_profile_btn"):
             nome = st.session_state.get("novo_nome_perfil", "").strip()
+
             if nome:
                 save_profile(nome, get_profile_payload())
                 st.session_state["saved_profiles"] = load_profiles()
@@ -302,22 +340,27 @@ elif step == "Aprendizagem":
     st.markdown("---")
 
     checkbox_group("Tipo de erro mais comum", ERRO_OPTIONS, "tipo_erro_mais_comum", columns=3)
+
     if "Outro" in st.session_state.get("tipo_erro_mais_comum", []):
         st.text_input("Outro tipo de erro", key="tipo_erro_outro")
 
     checkbox_group("O que mais engaja", ENGAJAMENTO_OPTIONS, "engajamento", columns=3)
+
     if "Outro" in st.session_state.get("engajamento", []):
         st.text_input("Outro engajamento", key="engajamento_outro")
 
     checkbox_group("Principal dificuldade", DIFICULDADE_OPTIONS, "principal_dificuldade", columns=3)
+
     if "Outro" in st.session_state.get("principal_dificuldade", []):
         st.text_input("Outra dificuldade", key="dificuldade_outro")
 
     checkbox_group("Sinais quando trava", TRAVA_OPTIONS, "sinais_quando_trava", columns=3)
+
     if "Outro" in st.session_state.get("sinais_quando_trava", []):
         st.text_input("Outro sinal", key="trava_outro")
 
     checkbox_group("Melhor forma de retomar", RETOMADA_OPTIONS, "melhor_forma_retomar", columns=3)
+
     if "Outro" in st.session_state.get("melhor_forma_retomar", []):
         st.text_input("Outra forma de retomar", key="retomada_outro")
 
@@ -329,8 +372,17 @@ elif step == "Cronograma":
     st.text_input("Matéria", key="cron_materia")
     st.selectbox("Área", AREA_MATERIA_OPTIONS, key="cron_area_materia")
 
-    hoje = st.date_input("Hoje", key="cron_hoje_input", value=st.session_state.get("cron_hoje_input", datetime.date.today()))
-    prova = st.date_input("Data da prova", key="cron_prova_input", value=st.session_state.get("cron_prova_input", datetime.date.today()))
+    hoje = st.date_input(
+        "Hoje",
+        key="cron_hoje_input",
+        value=st.session_state.get("cron_hoje_input", datetime.date.today())
+    )
+
+    prova = st.date_input(
+        "Data da prova",
+        key="cron_prova_input",
+        value=st.session_state.get("cron_prova_input", datetime.date.today())
+    )
 
     st.caption(f"Hoje: {formatar_data_br(hoje)}")
     st.caption(f"Prova: {formatar_data_br(prova)}")
@@ -368,13 +420,23 @@ elif step == "Configuração":
     st.text_area("Conteúdo do dia", key="conteudo_dia", height=120)
     st.text_input("Objetivo", key="objetivo_dia")
 
-    hoje2 = st.date_input("Hoje", key="config_did_hoje", value=st.session_state.get("config_did_hoje", datetime.date.today()))
-    prova2 = st.date_input("Data da prova", key="config_did_prova", value=st.session_state.get("config_did_prova", datetime.date.today()))
+    hoje2 = st.date_input(
+        "Hoje",
+        key="config_did_hoje",
+        value=st.session_state.get("config_did_hoje", datetime.date.today())
+    )
+
+    prova2 = st.date_input(
+        "Data da prova",
+        key="config_did_prova",
+        value=st.session_state.get("config_did_prova", datetime.date.today())
+    )
 
     radio_group("Situação do conteúdo", SITUACAO_OPTIONS, "situacao_conteudo", horizontal=True)
     radio_group("Prioridade", PRIORIDADE_OPTIONS, "prioridade_conteudo", horizontal=True)
 
     checkbox_group("Como a escola cobra", ESCOLA_COBRANCA_OPTIONS, "cobranca_escola", columns=3)
+
     if "Outro" in st.session_state.get("cobranca_escola", []):
         st.text_input("Outro tipo de cobrança", key="cobranca_extra")
 
